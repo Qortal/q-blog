@@ -178,12 +178,13 @@ export const blogSlice = createSlice({
     },
     addToHashMap: (state, action) => {
       const post = action.payload
-      state.hashMapPosts[post.id] = post
+      const fullId = 
+      state.hashMapPosts[post.id + "-" + post.user] = post
     },
     updateInHashMap: (state, action) => {
-      const { id } = action.payload
+      const { id, user } = action.payload
       const post = action.payload
-      state.hashMapPosts[id] = { ...post }
+      state.hashMapPosts[id + '-' + user] = { ...post }
     },
     removeFromHashMap: (state, action) => {
       const idToDelete = action.payload
@@ -192,7 +193,7 @@ export const blogSlice = createSlice({
     addArrayToHashMap: (state, action) => {
       const posts = action.payload
       posts.forEach((post: BlogPost) => {
-        state.hashMapPosts[post.id] = post
+        state.hashMapPosts[post.id + "-" + post.user] = post
       })
     },
     upsertPosts: (state, action) => {

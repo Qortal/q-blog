@@ -41,7 +41,7 @@ export const useFetchPosts = () => {
   const checkAndUpdatePost = React.useCallback(
     (post: BlogPost) => {
       // Check if the post exists in hashMapPosts
-      const existingPost = hashMapPosts[post.id]
+      const existingPost = hashMapPosts[post.id + "-" + post.user]
       if (!existingPost) {
         // If the post doesn't exist, add it to hashMapPosts
         return true

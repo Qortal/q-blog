@@ -7,7 +7,7 @@ export const checkAndUpdatePost = (post: BlogPost) => {
   const hashMapPosts = useSelector((state: RootState) => state.blog.hashMapPosts);
 
   // Check if the post exists in hashMapPosts
-  const existingPost = hashMapPosts[post.id];
+  const existingPost = hashMapPosts[post.id + "-" + post.user];
 
   if (!existingPost) {
     // If the post doesn't exist, add it to hashMapPosts

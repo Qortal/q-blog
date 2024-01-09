@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ReusableModal } from '../../components/modals/ReusableModal'
 import { CreatePostBuilder } from './CreatePostBuilder'
 import { CreatePostMinimal } from './CreatePostMinimal'
@@ -8,7 +8,7 @@ import HourglassFullRoundedIcon from '@mui/icons-material/HourglassFullRounded'
 import { display } from '@mui/system'
 import { useDispatch, useSelector } from 'react-redux'
 import { setIsLoadingGlobal } from '../../state/features/globalSlice'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { checkStructure } from '../../utils/checkStructure'
 import { RootState } from '../../state/store'
 import {
@@ -28,7 +28,7 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
     const formPostId = buildIdentifierFromCreateTitleIdAndId(formBlogId, postId)
     return formPostId
   }, [blog, postId, mode])
-  const { user } = useSelector((state: RootState) => state.auth)
+  const user = useSelector((state: RootState) => state.auth?.user)
 
   const [toggleEditorType, setToggleEditorType] = useState<EditorType | null>(
     null
@@ -38,6 +38,8 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
   const [editType, setEditType] = useState<EditorType | null>(null)
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+
   React.useEffect(() => {
     if (!toggleEditorType && mode !== 'edit') {
       setIsOpen(true)
@@ -47,6 +49,14 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
   const switchType = () => {
     setIsOpen(true)
   }
+
+  useEffect(()=> {
+    if(username && user?.name && mode === 'edit'){
+      if(username !== user?.name){
+        navigate('/')
+      }
+    }
+  }, [user, username, mode])
 
   const getBlogPost = React.useCallback(async () => {
     try {

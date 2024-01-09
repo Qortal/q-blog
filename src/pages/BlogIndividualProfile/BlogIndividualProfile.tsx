@@ -134,6 +134,8 @@ export const BlogIndividualProfile = () => {
     await getBlogPosts()
   }, [getBlogPosts])
 
+  console.log({blogPosts})
+
   const subscribe = async () => {
     try {
       if (!user?.name) return
@@ -233,7 +235,7 @@ export const BlogIndividualProfile = () => {
         style={{ backgroundColor: theme.palette.background.default }}
       >
         {blogPosts.map((post, index) => {
-          const existingPost = hashMapPosts[post.id]
+          let existingPost = hashMapPosts[post.id + "-" + post.user]
           let blogPost = post
           if (existingPost) {
             blogPost = existingPost

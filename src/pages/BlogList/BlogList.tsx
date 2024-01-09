@@ -155,7 +155,7 @@ export const BlogList = ({ mode }: BlogListProps) => {
         columnClassName="my-masonry-grid_column"
       >
         {posts.map((post, index) => {
-          const existingPost = hashMapPosts[post.id]
+          const existingPost = hashMapPosts[post.id + "-" + post.user]
           let blogPost = post
           if (existingPost) {
             blogPost = existingPost
