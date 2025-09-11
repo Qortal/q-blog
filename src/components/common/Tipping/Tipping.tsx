@@ -11,34 +11,34 @@ import {
   InputLabel,
   Tooltip,
   Typography,
-  useTheme
-} from '@mui/material'
-import React, { useCallback, useState } from 'react'
-import { CardContentContainerComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardHeaderComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardColComment } from '../../../pages/BlogList/PostPreview-styles'
-import { AuthorTextComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardContentComment } from '../../../pages/BlogList/PostPreview-styles'
-import MenuItem from '@mui/material/MenuItem'
-import Select, { SelectChangeEvent } from '@mui/material/Select'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../../../state/store'
-import Portal from '../Portal'
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
+  useTheme,
+} from '@mui/material';
+import React, { useCallback, useState } from 'react';
+import { CardContentContainerComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardHeaderComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardColComment } from '../../../pages/BlogList/PostPreview-styles';
+import { AuthorTextComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardContentComment } from '../../../pages/BlogList/PostPreview-styles';
+import MenuItem from '@mui/material/MenuItem';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../../state/store';
+import Portal from '../Portal';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 interface TippingProps {
-  name: string
-  onSubmit: () => void
-  onClose: () => void
-  onlyIcon?: boolean
+  name: string;
+  onSubmit: () => void;
+  onClose: () => void;
+  onlyIcon?: boolean;
 }
-import QORT from '../../../assets/img/qort.png'
-import ARRR from '../../../assets/img/arrr.png'
-import LTC from '../../../assets/img/ltc.png'
-import BTC from '../../../assets/img/btc.png'
-import DOGE from '../../../assets/img/doge.png'
-import DGB from '../../../assets/img/dgb.png'
-import RVN from '../../../assets/img/rvn.png'
-import { setNotification } from '../../../state/features/notificationsSlice'
+import QORT from '../../../assets/img/qort.png';
+import ARRR from '../../../assets/img/arrr.png';
+import LTC from '../../../assets/img/ltc.png';
+import BTC from '../../../assets/img/btc.png';
+import DOGE from '../../../assets/img/doge.png';
+import DGB from '../../../assets/img/dgb.png';
+import RVN from '../../../assets/img/rvn.png';
+import { setNotification } from '../../../state/features/notificationsSlice';
 const coins = [
   { value: 'QORT', label: 'QORT' },
   { value: 'ARRR', label: 'ARRR' },
@@ -46,104 +46,97 @@ const coins = [
   { value: 'BTC', label: 'BTC' },
   { value: 'DOGE', label: 'DOGE' },
   { value: 'DGB', label: 'DGB' },
-  { value: 'RVN', label: 'RVN' }
-]
-export const Tipping = ({
-  onSubmit,
-  onClose,
-  name,
-  onlyIcon
-}: TippingProps) => {
-  const { user } = useSelector((state: RootState) => state.auth)
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const [selectedCoin, setSelectedCoint] = useState<any>(coins[0])
-  const [amount, setAmount] = useState<number>(0)
+  { value: 'RVN', label: 'RVN' },
+];
+export const Tipping = ({ onSubmit, onClose, name, onlyIcon }: TippingProps) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [selectedCoin, setSelectedCoint] = useState<any>(coins[0]);
+  const [amount, setAmount] = useState<number>(0);
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const resetValues = () => {
-    setSelectedCoint(coins[0])
-    setAmount(0)
-    setIsOpen(false)
-  }
+    setSelectedCoint(coins[0]);
+    setAmount(0);
+    setIsOpen(false);
+  };
 
   const sendCoin = async () => {
     try {
-      if (!name) return
+      if (!name) return;
       let res = await qortalRequest({
         action: 'GET_NAME_DATA',
-        name: name
-      })
-      const address = res.owner
-      if (!address || !amount || !selectedCoin?.value) return
+        name: name,
+      });
+      const address = res.owner;
+      if (!address || !amount || !selectedCoin?.value) return;
 
-      if (isNaN(amount)) return
+      if (isNaN(amount)) return;
       await qortalRequest({
         action: 'SEND_COIN',
         coin: selectedCoin.value,
         destinationAddress: address,
-        amount: amount
-      })
+        amount: amount,
+      });
       dispatch(
         setNotification({
           msg: 'Coin successfully sent',
-          alertType: 'success'
-        })
-      )
-      resetValues()
-      onSubmit()
+          alertType: 'success',
+        }),
+      );
+      resetValues();
+      onSubmit();
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || 'Failed to send coin',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || 'Failed to send coin',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
           msg: error?.message || 'Failed to send coin',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
     }
-  }
+  };
 
   const handleOptionChange = (event: SelectChangeEvent<string>) => {
-    const optionId = event.target.value
-    const selectedOption = coins.find(
-      (option: any) => option.value === optionId
-    )
-    setSelectedCoint(selectedOption || null)
-  }
+    const optionId = event.target.value;
+    const selectedOption = coins.find((option: any) => option.value === optionId);
+    setSelectedCoint(selectedOption || null);
+  };
 
   const getLogo = (coin: string) => {
     switch (coin) {
       case 'QORT':
-        return QORT
+        return QORT;
       case 'ARRR':
-        return ARRR
+        return ARRR;
       case 'LTC':
-        return LTC
+        return LTC;
       case 'BTC':
-        return BTC
+        return BTC;
       case 'DOGE':
-        return DOGE
+        return DOGE;
       case 'DGB':
-        return DGB
+        return DGB;
       case 'RVN':
-        return RVN
+        return RVN;
       default:
-        ''
+        '';
       // code block
     }
-  }
+  };
 
   return (
     <Box
@@ -151,7 +144,7 @@ export const Tipping = ({
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        gap: 1
+        gap: 1,
       }}
     >
       <Tooltip title={`Support ${name}`} arrow>
@@ -161,20 +154,20 @@ export const Tipping = ({
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
           onClick={() => setIsOpen((prev) => !prev)}
         >
           <MonetizationOnIcon
             sx={{
               cursor: 'pointer',
-              color: 'gold'
+              color: 'gold',
             }}
           ></MonetizationOnIcon>
           {!onlyIcon && (
             <Typography
               sx={{
-                fontSize: '14px'
+                fontSize: '14px',
               }}
             >
               Support
@@ -196,15 +189,13 @@ export const Tipping = ({
                 sx={{
                   width: '300px',
                   display: 'flex',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                 }}
               >
                 <Box>
                   <InputLabel htmlFor="standard-adornment-name">To</InputLabel>
                   <Input id="standard-adornment-name" value={name} disabled />
-                  <InputLabel htmlFor="standard-adornment-coin">
-                    Coin
-                  </InputLabel>
+                  <InputLabel htmlFor="standard-adornment-coin">Coin</InputLabel>
                   <Select
                     id="standard-adornment-coin"
                     sx={{ width: '100%' }}
@@ -219,14 +210,14 @@ export const Tipping = ({
                             display: 'flex',
                             gap: 1,
                             justifyContent: 'center',
-                            alignItems: 'center'
+                            alignItems: 'center',
                           }}
                         >
                           {value && (
                             <img
                               style={{
                                 height: '25px',
-                                width: '25px'
+                                width: '25px',
                               }}
                               src={getLogo(value)}
                             />
@@ -234,7 +225,7 @@ export const Tipping = ({
 
                           {value}
                         </Box>
-                      )
+                      );
                     }}
                   >
                     {coins.map((option) => (
@@ -243,9 +234,7 @@ export const Tipping = ({
                       </MenuItem>
                     ))}
                   </Select>
-                  <InputLabel htmlFor="standard-adornment-amount">
-                    Amount
-                  </InputLabel>
+                  <InputLabel htmlFor="standard-adornment-amount">Amount</InputLabel>
                   <Input
                     id="standard-adornment-amount"
                     type="number"
@@ -256,7 +245,7 @@ export const Tipping = ({
                         <img
                           style={{
                             height: '15px',
-                            width: '15px'
+                            width: '15px',
                           }}
                           src={getLogo(selectedCoin?.value || '')}
                         />
@@ -270,9 +259,9 @@ export const Tipping = ({
               <Button
                 variant="contained"
                 onClick={() => {
-                  setIsOpen(false)
-                  resetValues()
-                  onClose()
+                  setIsOpen(false);
+                  resetValues();
+                  onClose();
                 }}
               >
                 Close
@@ -285,5 +274,5 @@ export const Tipping = ({
         </Portal>
       )}
     </Box>
-  )
-}
+  );
+};

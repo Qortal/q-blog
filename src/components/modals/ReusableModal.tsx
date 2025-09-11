@@ -1,12 +1,12 @@
-import React from 'react'
-import { Box, Modal, useTheme } from '@mui/material'
+import React from 'react';
+import { Box, Modal, useTheme } from '@mui/material';
 
 interface MyModalProps {
-  open: boolean
-  onClose?: () => void
-  onSubmit?: (obj: any) => Promise<void>
-  children: any
-  customStyles?: any
+  open: boolean;
+  onClose?: () => void;
+  onSubmit?: (obj: any) => Promise<void>;
+  children: any;
+  customStyles?: any;
 }
 
 export const ReusableModal: React.FC<MyModalProps> = ({
@@ -14,9 +14,9 @@ export const ReusableModal: React.FC<MyModalProps> = ({
   onClose,
   onSubmit,
   children,
-  customStyles = {}
+  customStyles = {},
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <Modal
       open={open}
@@ -37,11 +37,11 @@ export const ReusableModal: React.FC<MyModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
-          ...customStyles
+          ...customStyles,
         }}
       >
         {children}
       </Box>
     </Modal>
-  )
-}
+  );
+};

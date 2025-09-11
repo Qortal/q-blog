@@ -7,43 +7,38 @@ import {
   DialogContent,
   DialogTitle,
   Typography,
-  useTheme
-} from '@mui/material'
-import React, { useCallback, useState } from 'react'
-import { CommentEditor } from './CommentEditor'
-import { CardContentContainerComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardHeaderComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardColComment } from '../../../pages/BlogList/PostPreview-styles'
-import { AuthorTextComment } from '../../../pages/BlogList/PostPreview-styles'
-import { StyledCardContentComment } from '../../../pages/BlogList/PostPreview-styles'
-import { useSelector } from 'react-redux'
-import { RootState } from '../../../state/store'
-import Portal from '../Portal'
-import { Tipping } from '../Tipping/Tipping'
-import { formatDate } from '../../../utils/time'
+  useTheme,
+} from '@mui/material';
+import React, { useCallback, useState } from 'react';
+import { CommentEditor } from './CommentEditor';
+import { CardContentContainerComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardHeaderComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardColComment } from '../../../pages/BlogList/PostPreview-styles';
+import { AuthorTextComment } from '../../../pages/BlogList/PostPreview-styles';
+import { StyledCardContentComment } from '../../../pages/BlogList/PostPreview-styles';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../state/store';
+import Portal from '../Portal';
+import { Tipping } from '../Tipping/Tipping';
+import { formatDate } from '../../../utils/time';
 interface CommentProps {
-  comment: any
-  postId: string
-  postName: string
-  onSubmit: (obj?: any, isEdit?: boolean) => void
+  comment: any;
+  postId: string;
+  postName: string;
+  onSubmit: (obj?: any, isEdit?: boolean) => void;
 }
-export const Comment = ({
-  comment,
-  postId,
-  postName,
-  onSubmit
-}: CommentProps) => {
-  const [isReplying, setIsReplying] = useState<boolean>(false)
-  const [isEditing, setIsEditing] = useState<boolean>(false)
-  const { user } = useSelector((state: RootState) => state.auth)
-  const [currentEdit, setCurrentEdit] = useState<any>(null)
-  const theme = useTheme()
+export const Comment = ({ comment, postId, postName, onSubmit }: CommentProps) => {
+  const [isReplying, setIsReplying] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [currentEdit, setCurrentEdit] = useState<any>(null);
+  const theme = useTheme();
 
   const handleSubmit = useCallback((comment: any, isEdit?: boolean) => {
-    onSubmit(comment, isEdit)
-    setCurrentEdit(null)
-    setIsReplying(false)
-  }, [])
+    onSubmit(comment, isEdit);
+    setCurrentEdit(null);
+    setIsReplying(false);
+  }, []);
 
   return (
     <Box
@@ -51,7 +46,7 @@ export const Comment = ({
       sx={{
         display: 'flex',
         width: '100%',
-        flexDirection: 'column'
+        flexDirection: 'column',
       }}
     >
       {currentEdit && (
@@ -68,7 +63,7 @@ export const Comment = ({
                 sx={{
                   width: '300px',
                   display: 'flex',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                 }}
               >
                 <CommentEditor
@@ -93,7 +88,7 @@ export const Comment = ({
         sx={{
           display: 'flex',
           width: '100%',
-          flexDirection: 'column'
+          flexDirection: 'column',
         }}
       >
         <CommentCard
@@ -108,7 +103,7 @@ export const Comment = ({
               alignItems: 'center',
               gap: '5px',
               marginTop: '20px',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
             }}
           >
             {comment?.created && (
@@ -116,7 +111,7 @@ export const Comment = ({
                 variant="h6"
                 sx={{
                   fontSize: '12px',
-                  marginLeft: '5px'
+                  marginLeft: '5px',
                 }}
                 color={theme.palette.text.primary}
               >
@@ -127,22 +122,14 @@ export const Comment = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '5px',
               }}
             >
-              <Button
-                size="small"
-                variant="contained"
-                onClick={() => setIsReplying(true)}
-              >
+              <Button size="small" variant="contained" onClick={() => setIsReplying(true)}>
                 reply
               </Button>
               {user?.name === comment?.name && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => setCurrentEdit(comment)}
-                >
+                <Button size="small" variant="contained" onClick={() => setCurrentEdit(comment)}>
                   edit
                 </Button>
               )}
@@ -151,8 +138,8 @@ export const Comment = ({
                   size="small"
                   variant="contained"
                   onClick={() => {
-                    setIsReplying(false)
-                    setIsEditing(false)
+                    setIsReplying(false);
+                    setIsEditing(false);
                   }}
                 >
                   close
@@ -169,7 +156,7 @@ export const Comment = ({
           display: 'flex',
           width: '100%',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
         }}
       >
         {isReplying && (
@@ -183,21 +170,14 @@ export const Comment = ({
         )}
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-const CommentCard = ({
-  message,
-  created,
-  name,
-  replies,
-  children,
-  setCurrentEdit
-}: any) => {
-  const [avatarUrl, setAvatarUrl] = React.useState<string>('')
-  const { user } = useSelector((state: RootState) => state.auth)
+const CommentCard = ({ message, created, name, replies, children, setCurrentEdit }: any) => {
+  const [avatarUrl, setAvatarUrl] = React.useState<string>('');
+  const { user } = useSelector((state: RootState) => state.auth);
 
-  const theme = useTheme()
+  const theme = useTheme();
 
   const getAvatar = React.useCallback(async (author: string) => {
     try {
@@ -205,23 +185,23 @@ const CommentCard = ({
         action: 'GET_QDN_RESOURCE_URL',
         name: author,
         service: 'THUMBNAIL',
-        identifier: 'qortal_avatar'
-      })
+        identifier: 'qortal_avatar',
+      });
 
-      setAvatarUrl(url)
+      setAvatarUrl(url);
     } catch (error) {}
-  }, [])
+  }, []);
 
   React.useEffect(() => {
-    getAvatar(name)
-  }, [name])
+    getAvatar(name);
+  }, [name]);
   return (
     <CardContentContainerComment>
       <StyledCardHeaderComment
         sx={{
           '& .MuiCardHeader-content': {
-            overflow: 'hidden'
-          }
+            overflow: 'hidden',
+          },
         }}
       >
         <Box>
@@ -229,11 +209,7 @@ const CommentCard = ({
         </Box>
         <StyledCardColComment>
           <AuthorTextComment
-            color={
-              theme.palette.mode === 'light'
-                ? theme.palette.text.secondary
-                : '#d6e8ff'
-            }
+            color={theme.palette.mode === 'light' ? theme.palette.text.secondary : '#d6e8ff'}
           >
             {name}
           </AuthorTextComment>
@@ -257,7 +233,7 @@ const CommentCard = ({
           color={theme.palette.text.primary}
           sx={{
             fontSize: '16px',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
           }}
         >
           {message}
@@ -267,7 +243,7 @@ const CommentCard = ({
         sx={{
           paddingLeft: '15px',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
         }}
       >
         {replies?.map((reply: any) => {
@@ -279,7 +255,7 @@ const CommentCard = ({
                 display: 'flex',
                 border: '1px solid grey',
                 borderRadius: '10px',
-                marginTop: '8px'
+                marginTop: '8px',
               }}
             >
               <CommentCard
@@ -292,7 +268,7 @@ const CommentCard = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '5px',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
                   }}
                 >
                   {reply?.created && (
@@ -300,7 +276,7 @@ const CommentCard = ({
                       variant="h6"
                       sx={{
                         fontSize: '12px',
-                        marginLeft: '5px'
+                        marginLeft: '5px',
                       }}
                       color={theme.palette.text.primary}
                     >
@@ -315,7 +291,7 @@ const CommentCard = ({
                       sx={{
                         width: '30px',
                         alignSelf: 'flex-end',
-                        background: theme.palette.primary.light
+                        background: theme.palette.primary.light,
                       }}
                     >
                       edit
@@ -327,10 +303,10 @@ const CommentCard = ({
               </CommentCard>
               {/* <Typography variant="body2"> {reply?.message}</Typography> */}
             </Box>
-          )
+          );
         })}
       </Box>
       {children}
     </CardContentContainerComment>
-  )
-}
+  );
+};

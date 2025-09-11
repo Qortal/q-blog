@@ -1,66 +1,89 @@
-import React, { useCallback, useEffect } from 'react'
+// Helper: derive blogId for publish (supports edit without currentBlog)
+const computeBlogIdForPublish = (currentBlog: any, blogMetadataForEdit?: any): string | null => {
+  if (
+    blogMetadataForEdit &&
+    typeof blogMetadataForEdit.blogId === 'string' &&
+    blogMetadataForEdit.blogId
+  ) {
+    return blogMetadataForEdit.blogId;
+  }
+  if (currentBlog && typeof currentBlog.blogId === 'string') return currentBlog.blogId;
+  return null;
+};
+import React, { useCallback, useEffect } from 'react';
 
-import BlogEditor from '../../components/editor/BlogEditor'
-import ShortUniqueId from 'short-unique-id'
-import ReadOnlySlate from '../../components/editor/ReadOnlySlate'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../../state/store'
-import TextField from '@mui/material/TextField'
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
-import ImageUploader from '../../components/common/ImageUploader'
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'
-import DeleteIcon from '@mui/icons-material/Delete'
-import { Button, Box, useTheme } from '@mui/material'
-import { styled } from '@mui/system'
-import { Descendant } from 'slate'
-import EditIcon from '@mui/icons-material/Edit'
-import { extractTextFromSlate } from '../../utils/extractTextFromSlate'
-import { setNotification } from '../../state/features/notificationsSlice'
-import { VideoPanel } from '../../components/common/VideoPanel'
-import PostPublishModal from '../../components/common/PostPublishModal'
-import DynamicHeightItem from '../../components/DynamicHeightItem'
-import { Responsive, WidthProvider } from 'react-grid-layout'
-import '/node_modules/react-grid-layout/css/styles.css'
-import '/node_modules/react-resizable/css/styles.css'
-import { ReusableModal } from '../../components/modals/ReusableModal'
-import { VideoPlayer } from '../../components/common/VideoPlayer'
-import { EditorToolbar } from './components/Toolbar/EditorToolbar'
-import { Navbar } from './components/Navbar/NavbarBuilder'
-import { UserNavbar } from '../../components/common/UserNavbar/UserNavbar'
-import { setCurrentBlog } from '../../state/features/globalSlice'
-import AudioElement from '../../components/AudioElement'
-import { AudioPanel } from '../../components/common/AudioPanel'
+import BlogEditor from '../../components/editor/BlogEditor';
+import ShortUniqueId from 'short-unique-id';
+import ReadOnlySlate from '../../components/editor/ReadOnlySlate';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../state/store';
+import TextField from '@mui/material/TextField';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import ImageUploader from '../../components/common/ImageUploader';
+import { ImagePanel } from '../../components/common/ImagePanel';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  Button,
+  Box,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Tabs,
+  Tab,
+  Typography,
+} from '@mui/material';
+import { styled } from '@mui/system';
+import { Descendant } from 'slate';
+import EditIcon from '@mui/icons-material/Edit';
+import { extractTextFromSlate } from '../../utils/extractTextFromSlate';
+import { setNotification } from '../../state/features/notificationsSlice';
+import { VideoPanel } from '../../components/common/VideoPanel';
+import PostPublishModal from '../../components/common/PostPublishModal';
+import DynamicHeightItem from '../../components/DynamicHeightItem';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import '/node_modules/react-grid-layout/css/styles.css';
+import '/node_modules/react-resizable/css/styles.css';
+import { ReusableModal } from '../../components/modals/ReusableModal';
+import { VideoPlayer } from '../../components/common/VideoPlayer';
+import { EditorToolbar } from './components/Toolbar/EditorToolbar';
+import { Navbar } from './components/Navbar/NavbarBuilder';
+import { UserNavbar } from '../../components/common/UserNavbar/UserNavbar';
+import { setCurrentBlog } from '../../state/features/globalSlice';
+import AudioElement from '../../components/AudioElement';
+import { AudioPanel } from '../../components/common/AudioPanel';
 import {
   addPostToBeginning,
   addToHashMap,
   updateInHashMap,
-  updatePost
-} from '../../state/features/blogSlice'
-import { removePrefix } from '../../utils/blogIdformats'
-import { useNavigate } from 'react-router-dom'
-import { BuilderButton } from './CreatePost-styles'
-import FileElement from '../../components/FileElement'
-const ResponsiveGridLayout = WidthProvider(Responsive)
-const initialMinHeight = 2 // Define an initial minimum height for grid items
-const uid = new ShortUniqueId()
+  updatePost,
+} from '../../state/features/blogSlice';
+import { removePrefix } from '../../utils/blogIdformats';
+import { useNavigate } from 'react-router-dom';
+import { BuilderButton } from './CreatePost-styles';
+import FileElement from '../../components/FileElement';
+const ResponsiveGridLayout = WidthProvider(Responsive);
+const initialMinHeight = 2; // Define an initial minimum height for grid items
+const uid = new ShortUniqueId();
 const md = [
   { i: 'a', x: 0, y: 0, w: 4, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 4, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 4, h: initialMinHeight },
+];
 const sm = [
   { i: 'a', x: 0, y: 0, w: 6, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight },
+];
 const xs = [
   { i: 'a', x: 0, y: 0, w: 6, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight },
+];
 const initialValue: Descendant[] = [
   {
     type: 'paragraph',
-    children: [{ text: '' }]
-  }
-]
+    children: [{ text: '' }],
+  },
+];
 
 const BlogTitleInput = styled(TextField)(({ theme }) => ({
   marginBottom: '15px',
@@ -70,89 +93,132 @@ const BlogTitleInput = styled(TextField)(({ theme }) => ({
     background: 'transparent',
     '&::placeholder': {
       fontSize: '28px',
-      color: theme.palette.text.primary
-    }
+      color: theme.palette.text.primary,
+    },
   },
   '& .MuiInputLabel-root': {
-    fontSize: '28px'
+    fontSize: '28px',
   },
   '& .MuiInputBase-root': {
     background: 'transparent',
     '&:hover': {
-      background: 'transparent'
+      background: 'transparent',
     },
     '&.Mui-focused': {
-      background: 'transparent'
-    }
+      background: 'transparent',
+    },
   },
   '& .MuiOutlinedInput-root': {
     '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.primary.main
+      borderColor: theme.palette.primary.main,
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.primary.main
-    }
-  }
-}))
+      borderColor: theme.palette.primary.main,
+    },
+  },
+}));
 interface CreatePostBuilderProps {
-  blogContentForEdit?: any
-  postIdForEdit?: string
-  blogMetadataForEdit?: any
-  switchType?: () => void
+  blogContentForEdit?: any;
+  postIdForEdit?: string;
+  blogMetadataForEdit?: any;
+  switchType?: () => void;
 }
 
 export const CreatePostBuilder = ({
   blogContentForEdit,
   postIdForEdit,
   blogMetadataForEdit,
-  switchType
+  switchType,
 }: CreatePostBuilderProps) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const theme = useTheme()
-  const { user } = useSelector((state: RootState) => state.auth)
-  const { currentBlog } = useSelector((state: RootState) => state.global)
-  const [editingSection, setEditingSection] = React.useState<any>(null)
-  const [layouts, setLayouts] = React.useState<any>({ md, sm, xs })
-  const [currentBreakpoint, setCurrentBreakpoint] = React.useState<any>()
+  const theme = useTheme();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { currentBlog } = useSelector((state: RootState) => state.global);
+  const [editingSection, setEditingSection] = React.useState<any>(null);
+  const [layouts, setLayouts] = React.useState<any>({ md, sm, xs });
+  // Normalize incoming layouts for Builder editor
+  const toBuilderLayouts = (incoming: any) => {
+    if (incoming && typeof incoming === 'object' && incoming.md && incoming.sm && incoming.xs) {
+      return incoming;
+    }
+    return { md, sm, xs };
+  };
+
+  const [currentBreakpoint, setCurrentBreakpoint] = React.useState<any>();
   const handleLayoutChange = (layout: any, layoutss: any) => {
-    setLayouts(layoutss)
-  }
-  const [newPostContent, setNewPostContent] = React.useState<any[]>([])
-  const [title, setTitle] = React.useState<string>('')
-  const [isOpenPostModal, setIsOpenPostModal] = React.useState<boolean>(false)
-  const [isOpenEditTextModal, setIsOpenEditTextModal] =
-    React.useState<boolean>(false)
-  const [value, setValue] = React.useState(initialValue)
-  const [editorKey, setEditorKey] = React.useState(1)
-  const [count, setCount] = React.useState<number>(1)
-  const [isOpenAddTextModal, setIsOpenAddTextModal] =
-    React.useState<boolean>(false)
-  const [paddingValue, onChangePadding] = React.useState(5)
-  const [isEditNavOpen, setIsEditNavOpen] = React.useState<boolean>(false)
-  const dispatch = useDispatch()
-  const [navbarConfig, setNavbarConfig] = React.useState<any>(null)
+    setLayouts(layoutss);
+  };
+  const [newPostContent, setNewPostContent] = React.useState<any[]>([]);
+  const [title, setTitle] = React.useState<string>('');
+  const [isOpenPostModal, setIsOpenPostModal] = React.useState<boolean>(false);
+  const [isOpenEditTextModal, setIsOpenEditTextModal] = React.useState<boolean>(false);
+  const [value, setValue] = React.useState(initialValue);
+  const [editorKey, setEditorKey] = React.useState(1);
+  const [count, setCount] = React.useState<number>(1);
+  const [isOpenAddTextModal, setIsOpenAddTextModal] = React.useState<boolean>(false);
+  const [paddingValue, onChangePadding] = React.useState(5);
+  const [coverPickerOpen, setCoverPickerOpen] = React.useState(false);
+  const [coverTab, setCoverTab] = React.useState<'upload' | 'existing'>('upload');
+  const [pendingVideo, setPendingVideo] = React.useState<any | null>(null);
+  const [selectedPoster, setSelectedPoster] = React.useState<string>('');
+  const [existingImages, setExistingImages] = React.useState<any[]>([]);
+  const [existingImagesLoading, setExistingImagesLoading] = React.useState(false);
+  const [coverPickerMode, setCoverPickerMode] = React.useState<'add' | 'edit'>('add');
+  const [coverPickerTarget, setCoverPickerTarget] = React.useState<any | null>(null);
+  const qdnResourceUrl = React.useCallback(
+    (service: string, name: string, identifier: string) =>
+      `/arbitrary/${service}/${name}/${identifier}`,
+    [],
+  );
+  const fetchExistingImages = React.useCallback(async () => {
+    if (!user?.name) return;
+    setExistingImagesLoading(true);
+    try {
+      const SERVICES = ['IMAGE', 'THUMBNAIL', 'QCHAT_IMAGE'];
+      const lists = await Promise.all(
+        SERVICES.map(async (svc) => {
+          const res = await fetch(
+            `/arbitrary/resources?service=${svc}&name=${user.name}&includemetadata=true&limit=100&offset=0&reverse=true`,
+          );
+          const data = await res.json();
+          return Array.isArray(data)
+            ? data.map((it: any) => ({ ...it, service: it.service || svc }))
+            : [];
+        }),
+      );
+      const merged = lists.flat();
+      setExistingImages(merged);
+    } catch (e) {
+      setExistingImages([]);
+    } finally {
+      setExistingImagesLoading(false);
+    }
+  }, [user]);
+  const [isEditNavOpen, setIsEditNavOpen] = React.useState<boolean>(false);
+  const dispatch = useDispatch();
+  const [navbarConfig, setNavbarConfig] = React.useState<any>(null);
   const addPostSection = React.useCallback((content: any) => {
     const section = {
       type: 'editor',
       version: 1,
       content,
-      id: uid()
-    }
+      id: uid(),
+    };
 
-    setNewPostContent((prev) => [...prev, section])
-    setEditorKey((prev) => prev + 1)
-  }, [])
+    setNewPostContent((prev) => [...prev, section]);
+    setEditorKey((prev) => prev + 1);
+  }, []);
 
   async function getBlog(name: string, identifier: string, blog: any) {
-    const urlBlog = `/arbitrary/BLOG/${name}/${identifier}`
+    const urlBlog = `/arbitrary/BLOG/${name}/${identifier}`;
     const response = await fetch(urlBlog, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    const responseData = await response.json()
+        'Content-Type': 'application/json',
+      },
+    });
+    const responseData = await response.json();
     dispatch(
       setCurrentBlog({
         createdAt: responseData?.createdAt || '',
@@ -162,48 +228,42 @@ export const CreatePostBuilder = ({
         blogImage: responseData?.blogImage || '',
         category: blog.metadata?.category,
         tags: blog.metadata?.tags || [],
-        navbarConfig: responseData?.navbarConfig || null
-      })
-    )
+        navbarConfig: responseData?.navbarConfig || null,
+      }),
+    );
   }
 
   useEffect(() => {
-    if (blogContentForEdit && postIdForEdit && blogMetadataForEdit) {
-      setTitle(blogContentForEdit?.title || '')
-      setLayouts(
-        blogContentForEdit?.layouts || {
-          rows: []
-        }
-      )
-      setNewPostContent(blogContentForEdit?.postContent || [])
-      onChangePadding(blogContentForEdit?.layoutGeneralSettings?.padding || 5)
+    if (blogContentForEdit && postIdForEdit) {
+      setTitle(blogContentForEdit?.title || '');
+      setLayouts(toBuilderLayouts(blogContentForEdit?.layouts));
+      setNewPostContent(blogContentForEdit?.postContent || []);
+      onChangePadding(blogContentForEdit?.layoutGeneralSettings?.padding ?? 5);
     }
-  }, [blogContentForEdit, postIdForEdit, blogMetadataForEdit])
+  }, [blogContentForEdit, postIdForEdit]);
 
   const editBlog = React.useCallback(
     async (navbarConfig: any) => {
-      if (!user || !user.name)
-        throw new Error('Cannot update: your Qortal name is not accessible')
+      if (!user || !user.name) throw new Error('Cannot update: your Qortal name is not accessible');
 
-      if (!currentBlog)
-        throw new Error('Your blog is not available. Refresh and try again.')
+      if (!currentBlog) throw new Error('Your blog is not available. Refresh and try again.');
 
-      const name = user.name
-      const formattedTags: { [key: string]: string } = {}
-      const tags = currentBlog?.tags || []
-      const category = currentBlog?.category || ''
-      const title = currentBlog?.title || ''
-      const description = currentBlog?.description || ''
+      const name = user.name;
+      const formattedTags: { [key: string]: string } = {};
+      const tags = currentBlog?.tags || [];
+      const category = currentBlog?.category || '';
+      const title = currentBlog?.title || '';
+      const description = currentBlog?.description || '';
       tags.forEach((tag: string, i: number) => {
-        formattedTags[`tag${i + 1}`] = tag
-      })
+        formattedTags[`tag${i + 1}`] = tag;
+      });
 
       const blogProps: any = {
         ...currentBlog,
-        navbarConfig
-      }
+        navbarConfig,
+      };
 
-      const blogPostToBase64 = await objectToBase64(blogProps)
+      const blogPostToBase64 = await objectToBase64(blogProps);
       try {
         const resourceResponse = await qortalRequest({
           action: 'PUBLISH_QDN_RESOURCE',
@@ -214,221 +274,210 @@ export const CreatePostBuilder = ({
           description,
           category,
           ...formattedTags,
-          identifier: currentBlog.blogId
-        })
+          identifier: currentBlog.blogId,
+        });
 
         await new Promise<void>((res, rej) => {
           setTimeout(() => {
-            res()
-          }, 1000)
-        })
+            res();
+          }, 1000);
+        });
 
         // getBlog(name, currentBlog.blogId, currentBlog)
-        dispatch(setCurrentBlog(blogProps))
+        dispatch(setCurrentBlog(blogProps));
         dispatch(
           setNotification({
             msg: 'Blog successfully updated',
-            alertType: 'success'
-          })
-        )
+            alertType: 'success',
+          }),
+        );
       } catch (error: any) {
-        let notificationObj: any = null
+        let notificationObj: any = null;
         if (typeof error === 'string') {
           notificationObj = {
             msg: error || 'Failed to save blog',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         } else if (typeof error?.error === 'string') {
           notificationObj = {
             msg: error?.error || 'Failed to save blog',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         } else {
           notificationObj = {
             msg: error?.message || 'Failed to save blog',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         }
-        if (!notificationObj) return
-        dispatch(setNotification(notificationObj))
+        if (!notificationObj) return;
+        dispatch(setNotification(notificationObj));
         if (error instanceof Error) {
-          throw new Error(error.message)
+          throw new Error(error.message);
         } else {
-          throw new Error('An unknown error occurred')
+          throw new Error('An unknown error occurred');
         }
       }
     },
-    [user, currentBlog]
-  )
+    [user, currentBlog],
+  );
 
-  const handleSaveNavBar = useCallback(
-    async (navMenu: any, navbarConfig: any) => {
-      try {
-        const config = {
-          type: 'topNav',
-          title: '',
-          logo: '',
-          ...navbarConfig,
-          navItems: navMenu
-        }
-        await editBlog(config)
-        setIsEditNavOpen(false)
-        setNavbarConfig(config)
-      } catch (error: any) {
-        dispatch(
-          setNotification({
-            msg: error?.message || 'Could not save the navbar',
-            alertType: 'error'
-          })
-        )
-      }
-    },
-    []
-  )
-
-  const handleRemoveNavBar = useCallback(async () => {
+  const handleSaveNavBar = useCallback(async (navMenu: any, navbarConfig: any) => {
     try {
-      await editBlog(null)
-      setNavbarConfig(null)
-      setIsEditNavOpen(false)
+      const config = {
+        type: 'topNav',
+        title: '',
+        logo: '',
+        ...navbarConfig,
+        navItems: navMenu,
+      };
+      await editBlog(config);
+      setIsEditNavOpen(false);
+      setNavbarConfig(config);
     } catch (error: any) {
       dispatch(
         setNotification({
           msg: error?.message || 'Could not save the navbar',
-          alertType: 'error'
-        })
-      )
+          alertType: 'error',
+        }),
+      );
     }
-  }, [])
+  }, []);
+
+  const handleRemoveNavBar = useCallback(async () => {
+    try {
+      await editBlog(null);
+      setNavbarConfig(null);
+      setIsEditNavOpen(false);
+    } catch (error: any) {
+      dispatch(
+        setNotification({
+          msg: error?.message || 'Could not save the navbar',
+          alertType: 'error',
+        }),
+      );
+    }
+  }, []);
 
   function objectToBase64(obj: any) {
     // Step 1: Convert the object to a JSON string
-    const jsonString = JSON.stringify(obj)
+    const jsonString = JSON.stringify(obj);
 
     // Step 2: Create a Blob from the JSON string
-    const blob = new Blob([jsonString], { type: 'application/json' })
+    const blob = new Blob([jsonString], { type: 'application/json' });
 
     // Step 3: Create a FileReader to read the Blob as a base64-encoded string
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
           // Remove 'data:application/json;base64,' prefix
-          const base64 = reader.result.replace(
-            'data:application/json;base64,',
-            ''
-          )
-          resolve(base64)
+          const base64 = reader.result.replace('data:application/json;base64,', '');
+          resolve(base64);
         } else {
-          reject(
-            new Error('Failed to read the Blob as a base64-encoded string')
-          )
+          reject(new Error('Failed to read the Blob as a base64-encoded string'));
         }
-      }
+      };
       reader.onerror = () => {
-        reject(reader.error)
-      }
-      reader.readAsDataURL(blob)
-    })
+        reject(reader.error);
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   const description = React.useMemo(() => {
-    let description = ''
-    const findText = newPostContent.find((data) => data?.type === 'editor')
+    let description = '';
+    const findText = newPostContent.find((data) => data?.type === 'editor');
     if (findText && findText.content) {
-      description = extractTextFromSlate(findText?.content)
-      description = description.slice(0, 180)
+      description = extractTextFromSlate(findText?.content);
+      description = description.slice(0, 180);
     }
-    return description
-  }, [newPostContent])
+    return description;
+  }, [newPostContent]);
   const post = React.useMemo(() => {
     return {
       description,
-      title
-    }
-  }, [title, description])
+      title,
+    };
+  }, [title, description]);
 
   async function publishQDNResource(params: any) {
-    let address
-    let name
-    let errorMsg = ''
+    let address;
+    let name;
+    let errorMsg = '';
 
-    address = user?.address
-    name = user?.name || ''
+    address = user?.address;
+    name = user?.name || '';
 
-    const missingFields = []
+    const missingFields = [];
     if (!address) {
-      errorMsg = "Cannot post: your address isn't available"
+      errorMsg = "Cannot post: your address isn't available";
     }
     if (!name) {
-      errorMsg = 'Cannot post without a name'
+      errorMsg = 'Cannot post without a name';
     }
-    if (!title) missingFields.push('title')
+    if (!title) missingFields.push('title');
     if (missingFields.length > 0) {
-      const missingFieldsString = missingFields.join(', ')
-      const errMsg = `Missing: ${missingFieldsString}`
-      errorMsg = errMsg
+      const missingFieldsString = missingFields.join(', ');
+      const errMsg = `Missing: ${missingFieldsString}`;
+      errorMsg = errMsg;
     }
-    if (newPostContent.length === 0) {
-      errorMsg = 'Your post has no content'
-    }
-
-    if (!currentBlog) {
-      errorMsg = 'Cannot publish without first creating a blog.'
-    }
+    // In edit mode, allow updating even if content array is empty (legacy/minimal posts)
 
     if (errorMsg) {
       dispatch(
         setNotification({
           msg: errorMsg,
-          alertType: 'error'
-        })
-      )
-      throw new Error(errorMsg)
+          alertType: 'error',
+        }),
+      );
+      throw new Error(errorMsg);
     }
 
     const layoutGeneralSettings = {
       padding: paddingValue ?? 0,
-      blogPostType: 'builder'
-    }
+      blogPostType: 'builder',
+    };
 
     const postObject = {
       title,
       createdAt: Date.now(),
       postContent: newPostContent,
       layouts,
-      layoutGeneralSettings
-    }
+      layoutGeneralSettings,
+    };
     try {
-      if (!currentBlog) return
-      const id = uid()
+      if (!currentBlog) return;
+      const id = uid();
       let createTitleId = title
         .replace(/[^a-zA-Z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim()
+        .trim();
 
       if (createTitleId.toLowerCase().includes('post')) {
-        createTitleId = createTitleId.replace(/post/gi, '')
+        createTitleId = createTitleId.replace(/post/gi, '');
       }
       if (createTitleId.toLowerCase().includes('q-blog')) {
-        createTitleId = createTitleId.replace(/q-blog/gi, '')
+        createTitleId = createTitleId.replace(/q-blog/gi, '');
       }
 
       if (createTitleId.endsWith('-')) {
-        createTitleId = createTitleId.slice(0, -1)
+        createTitleId = createTitleId.slice(0, -1);
       }
       if (createTitleId.startsWith('-')) {
-        createTitleId = createTitleId.slice(1)
+        createTitleId = createTitleId.slice(1);
       }
-      createTitleId = createTitleId.slice(0, 24)
-      const identifier = `${currentBlog.blogId}-post-${createTitleId}-${id}`
-      const blogPostToBase64 = await objectToBase64(postObject)
-      let description = ''
-      const findText = newPostContent.find((data) => data?.type === 'editor')
+      createTitleId = createTitleId.slice(0, 24);
+      const blogIdForPublish = computeBlogIdForPublish(currentBlog, blogMetadataForEdit);
+      const identifier = postIdForEdit
+        ? `${blogIdForPublish ?? ''}-post-${postIdForEdit}`
+        : `${blogIdForPublish ?? currentBlog?.blogId ?? ''}-post-${createTitleId}-${id}`;
+      const blogPostToBase64 = await objectToBase64(postObject);
+      let description = '';
+      const findText = newPostContent.find((data) => data?.type === 'editor');
       if (findText && findText.content) {
-        description = extractTextFromSlate(findText?.content)
-        description = description.slice(0, 180)
+        description = extractTextFromSlate(findText?.content);
+        description = description.slice(0, 180);
       }
 
       let requestBody: any = {
@@ -439,54 +488,48 @@ export const CreatePostBuilder = ({
         title: title,
         description: params?.description || description,
         category: params?.category || '',
-        identifier: identifier
-      }
+        identifier: identifier,
+      };
 
-      const formattedTags: { [key: string]: string } = {}
-      let tag4 = ''
-      let tag5 = ''
+      const formattedTags: { [key: string]: string } = {};
+      let tag4 = '';
+      let tag5 = '';
       if (params?.tags) {
         params.tags.slice(0, 3).forEach((tag: string, i: number) => {
-          formattedTags[`tag${i + 1}`] = tag
-        })
+          formattedTags[`tag${i + 1}`] = tag;
+        });
       }
 
-      const findVideo: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'video'
-      )
-      const findAudio: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'audio'
-      )
-      const findImage: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'image'
-      )
+      const findVideo: any = postObject?.postContent?.find((data: any) => data?.type === 'video');
+      const findAudio: any = postObject?.postContent?.find((data: any) => data?.type === 'audio');
+      const findImage: any = postObject?.postContent?.find((data: any) => data?.type === 'image');
 
-      const tag5Array = ['t']
-      if (findVideo) tag5Array.push('v')
-      if (findAudio) tag5Array.push('a')
+      const tag5Array = ['t'];
+      if (findVideo) tag5Array.push('v');
+      if (findAudio) tag5Array.push('a');
       if (findImage) {
-        tag5Array.push('i')
+        tag5Array.push('i');
         const imageElement = document.querySelector(
-          `[id="${findImage.id}"] img`
-        ) as HTMLImageElement | null
+          `[id="${findImage.id}"] img`,
+        ) as HTMLImageElement | null;
         if (imageElement) {
-          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`
+          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`;
         } else {
-          tag4 = 'v1.0x0'
+          tag4 = 'v1.0x0';
         }
       }
       if (!findImage) {
-        tag4 = 'v1.0x0'
+        tag4 = 'v1.0x0';
       }
-      tag5 = tag5Array.join(', ')
+      tag5 = tag5Array.join(', ');
       requestBody = {
         ...requestBody,
         ...formattedTags,
         tag4: tag4,
-        tag5: tag5
-      }
+        tag5: tag5,
+      };
 
-      const resourceResponse = await qortalRequest(requestBody)
+      const resourceResponse = await qortalRequest(requestBody);
 
       const postobj: any = {
         ...postObject,
@@ -496,112 +539,104 @@ export const CreatePostBuilder = ({
         tags: [...(params?.tags || []), tag4, tag5],
         id: identifier,
         user: name,
-        postImage: findImage ? findImage?.content?.image : ''
-      }
+        postImage: findImage ? findImage?.content?.image : '',
+      };
 
-      const withoutImage = { ...postobj }
-      delete withoutImage.postImage
-      dispatch(addPostToBeginning(withoutImage))
-      dispatch(addToHashMap(postobj))
+      const withoutImage = { ...postobj };
+      delete withoutImage.postImage;
+      dispatch(addPostToBeginning(withoutImage));
+      dispatch(addToHashMap(postobj));
       dispatch(
         setNotification({
           msg: 'Blog post successfully published',
-          alertType: 'success'
-        })
-      )
-      const str = identifier
-      const arr = str.split('-post-')
-      const str1 = arr[0]
-      const str2 = arr[1]
-      const blogId = removePrefix(str1)
-      navigate(`/${name}/${blogId}/${str2}`)
+          alertType: 'success',
+        }),
+      );
+      const str = identifier;
+      const arr = str.split('-post-');
+      const str1 = arr[0];
+      const str2 = arr[1];
+      const blogId = removePrefix(str1);
+      navigate(`/${name}/${blogId}/${str2}`);
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
           msg: error?.message || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
 
-      throw new Error('Failed to publish post')
+      throw new Error('Failed to publish post');
     }
   }
 
   async function updateQDNResource(params: any) {
-    if (!blogContentForEdit || !postIdForEdit || !blogMetadataForEdit) return
-    let address
-    let name
-    let errorMsg = ''
+    if (!blogContentForEdit || !postIdForEdit) return;
+    let address;
+    let name;
+    let errorMsg = '';
 
-    address = user?.address
-    name = user?.name || ''
+    address = user?.address;
+    name = user?.name || '';
 
-    const missingFields = []
+    const missingFields = [];
     if (!address) {
-      errorMsg = "Cannot post: your address isn't available"
+      errorMsg = "Cannot post: your address isn't available";
     }
     if (!name) {
-      errorMsg = 'Cannot post without a name'
+      errorMsg = 'Cannot post without a name';
     }
-    if (!title) missingFields.push('title')
+    if (!title) missingFields.push('title');
     if (missingFields.length > 0) {
-      const missingFieldsString = missingFields.join(', ')
-      const errMsg = `Missing: ${missingFieldsString}`
-      errorMsg = errMsg
+      const missingFieldsString = missingFields.join(', ');
+      const errMsg = `Missing: ${missingFieldsString}`;
+      errorMsg = errMsg;
     }
-    if (newPostContent.length === 0) {
-      errorMsg = 'Your post has no content'
-    }
-
-    if (!currentBlog) {
-      errorMsg = 'Cannot publish without first creating a blog.'
-    }
+    // In edit mode, allow updating even if content array is empty (legacy/minimal posts)
 
     if (errorMsg) {
       dispatch(
         setNotification({
           msg: errorMsg,
-          alertType: 'error'
-        })
-      )
-      throw new Error(errorMsg)
+          alertType: 'error',
+        }),
+      );
+      throw new Error(errorMsg);
     }
 
     const layoutGeneralSettings = {
       padding: paddingValue ?? 0,
-      blogPostType: 'builder'
-    }
+      blogPostType: 'builder',
+    };
 
     const postObject = {
       ...blogContentForEdit,
       title,
       postContent: newPostContent,
       layouts,
-      layoutGeneralSettings
-    }
+      layoutGeneralSettings,
+    };
     try {
-      if (!currentBlog) return
-
-      const identifier = postIdForEdit
-      const blogPostToBase64 = await objectToBase64(postObject)
-      let description = ''
-      const findText = newPostContent.find((data) => data?.type === 'editor')
+      const identifier = postIdForEdit;
+      const blogPostToBase64 = await objectToBase64(postObject);
+      let description = '';
+      const findText = newPostContent.find((data) => data?.type === 'editor');
       if (findText && findText.content) {
-        description = extractTextFromSlate(findText?.content)
-        description = description.slice(0, 180)
+        description = extractTextFromSlate(findText?.content);
+        description = description.slice(0, 180);
       }
 
       let requestBody: any = {
@@ -612,54 +647,48 @@ export const CreatePostBuilder = ({
         title: title,
         description: params?.description || description,
         category: params?.category || '',
-        identifier: identifier
-      }
+        identifier: identifier,
+      };
 
-      const formattedTags: { [key: string]: string } = {}
-      let tag4 = ''
-      let tag5 = ''
+      const formattedTags: { [key: string]: string } = {};
+      let tag4 = '';
+      let tag5 = '';
       if (params?.tags) {
         params.tags.slice(0, 3).forEach((tag: string, i: number) => {
-          formattedTags[`tag${i + 1}`] = tag
-        })
+          formattedTags[`tag${i + 1}`] = tag;
+        });
       }
 
-      const findVideo: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'video'
-      )
-      const findAudio: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'audio'
-      )
-      const findImage: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'image'
-      )
+      const findVideo: any = postObject?.postContent?.find((data: any) => data?.type === 'video');
+      const findAudio: any = postObject?.postContent?.find((data: any) => data?.type === 'audio');
+      const findImage: any = postObject?.postContent?.find((data: any) => data?.type === 'image');
 
-      const tag5Array = ['t']
-      if (findVideo) tag5Array.push('v')
-      if (findAudio) tag5Array.push('a')
+      const tag5Array = ['t'];
+      if (findVideo) tag5Array.push('v');
+      if (findAudio) tag5Array.push('a');
       if (findImage) {
-        tag5Array.push('i')
+        tag5Array.push('i');
         const imageElement = document.querySelector(
-          `[id="${findImage.id}"] img`
-        ) as HTMLImageElement | null
+          `[id="${findImage.id}"] img`,
+        ) as HTMLImageElement | null;
         if (imageElement) {
-          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`
+          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`;
         } else {
-          tag4 = 'v1.0x0'
+          tag4 = 'v1.0x0';
         }
       }
       if (!findImage) {
-        tag4 = 'v1.0x0'
+        tag4 = 'v1.0x0';
       }
-      tag5 = tag5Array.join(', ')
+      tag5 = tag5Array.join(', ');
       requestBody = {
         ...requestBody,
         ...formattedTags,
         tag4: tag4,
-        tag5: tag5
-      }
+        tag5: tag5,
+      };
 
-      const resourceResponse = await qortalRequest(requestBody)
+      const resourceResponse = await qortalRequest(requestBody);
       const postobj = {
         ...postObject,
         title: title,
@@ -667,40 +696,40 @@ export const CreatePostBuilder = ({
         category: params?.category || '',
         tags: [...(params?.tags || []), tag4, tag5],
         id: identifier,
-        user: name
-      }
-      const withoutImage = { ...postobj }
-      delete withoutImage.postImage
-      dispatch(updatePost(withoutImage))
-      dispatch(updateInHashMap(postobj))
+        user: name,
+      };
+      const withoutImage = { ...postobj };
+      delete withoutImage.postImage;
+      dispatch(updatePost(withoutImage));
+      dispatch(updateInHashMap(postobj));
       dispatch(
         setNotification({
           msg: 'Blog post successfully updated',
-          alertType: 'success'
-        })
-      )
+          alertType: 'success',
+        }),
+      );
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || 'Failed to update post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || 'Failed to update post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
           msg: error?.message || 'Failed to update post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
 
-      throw new Error('Failed to update post')
+      throw new Error('Failed to update post');
     }
   }
   const addImage = (base64: string) => {
@@ -709,29 +738,24 @@ export const CreatePostBuilder = ({
       version: 1,
       content: {
         image: base64,
-        caption: ''
+        caption: '',
       },
-      id: uid()
-    }
-    setNewPostContent((prev) => [...prev, section])
-  }
+      id: uid(),
+    };
+    setNewPostContent((prev) => [...prev, section]);
+  };
 
   interface IaddVideo {
-    name: string
-    identifier: string
-    service: string
-    title: string
-    description: string
-    mimeType?: string
+    name: string;
+    identifier: string;
+    service: string;
+    title: string;
+    description: string;
+    mimeType?: string;
+    poster?: string;
   }
 
-  const addVideo = ({
-    name,
-    identifier,
-    service,
-    title,
-    description
-  }: IaddVideo) => {
+  const addVideo = ({ name, identifier, service, title, description, poster }: IaddVideo) => {
     const section = {
       type: 'video',
       version: 1,
@@ -740,20 +764,15 @@ export const CreatePostBuilder = ({
         identifier: identifier,
         service: service,
         title,
-        description
+        description,
+        ...(poster ? { poster } : {}),
       },
-      id: uid()
-    }
-    setNewPostContent((prev) => [...prev, section])
-  }
+      id: uid(),
+    };
+    setNewPostContent((prev) => [...prev, section]);
+  };
 
-  const addAudio = ({
-    name,
-    identifier,
-    service,
-    title,
-    description
-  }: IaddVideo) => {
+  const addAudio = ({ name, identifier, service, title, description }: IaddVideo) => {
     const section = {
       type: 'audio',
       version: 1,
@@ -762,23 +781,16 @@ export const CreatePostBuilder = ({
         identifier: identifier,
         service: service,
         title,
-        description
+        description,
       },
-      id: uid()
-    }
-    setNewPostContent((prev) => [...prev, section])
-  }
+      id: uid(),
+    };
+    setNewPostContent((prev) => [...prev, section]);
+  };
 
-  const addFile = ({
-    name,
-    identifier,
-    service,
-    title,
-    description,
-    mimeType
-  }: IaddVideo) => {
-    const id = uid()
-    const type = 'file'
+  const addFile = ({ name, identifier, service, title, description, mimeType }: IaddVideo) => {
+    const id = uid();
+    const type = 'file';
     const section = {
       type,
       version: 1,
@@ -788,67 +800,71 @@ export const CreatePostBuilder = ({
         service: service,
         title,
         description,
-        mimeType
+        mimeType,
       },
-      id
-    }
-    setNewPostContent((prev) => [...prev, section])
-  }
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
+  };
 
   const addSection = () => {
-    addPostSection(value)
-    setValue(initialValue)
-  }
+    addPostSection(value);
+    setValue(initialValue);
+  };
 
   const removeSection = (section: any) => {
-    const newContent = newPostContent.filter((s) => s.id !== section.id)
-    setNewPostContent(newContent)
-  }
+    const newContent = newPostContent.filter((s) => s.id !== section.id);
+    setNewPostContent(newContent);
+  };
   const editImage = (base64: string, section: any) => {
     const newSection = {
       ...section,
       content: {
         image: base64,
-        caption: section.content.caption
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+        caption: section.content.caption,
+      },
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
   const editVideo = (
-    { name, identifier, service, description, title }: IaddVideo,
-    section: any
+    { name, identifier, service, description, title, poster }: IaddVideo,
+    section: any,
   ) => {
+    const nextContent: any = {
+      name,
+      identifier,
+      service,
+      description,
+      title,
+    };
+    if (poster === undefined) {
+      if (typeof section.content?.poster !== 'undefined') {
+        nextContent.poster = section.content.poster;
+      }
+    } else if (poster) {
+      nextContent.poster = poster;
+    }
     const newSection = {
       ...section,
-      content: {
-        name: name,
-        identifier: identifier,
-        service: service,
-        description,
-        title
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+      content: nextContent,
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
   const editAudio = (
     { name, identifier, service, description, title }: IaddVideo,
-    section: any
+    section: any,
   ) => {
     const newSection = {
       ...section,
@@ -857,54 +873,53 @@ export const CreatePostBuilder = ({
         identifier: identifier,
         service: service,
         description,
-        title
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+        title,
+      },
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
   const editSection = (section: any) => {
-    setIsOpenEditTextModal(true)
-    setEditingSection(section)
-    setValue(section.content)
-  }
+    setIsOpenEditTextModal(true);
+    setEditingSection(section);
+    setValue(section.content);
+  };
   const editPostSection = React.useCallback(
     (content: any, section: any) => {
-      const findSectionIndex = newPostContent.findIndex(
-        (s) => s.id === section.id
-      )
+      const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
       if (findSectionIndex !== -1) {
-        const copyNewPostContent = [...newPostContent]
+        const copyNewPostContent = [...newPostContent];
         copyNewPostContent[findSectionIndex] = {
           ...section,
-          content
-        }
+          content,
+        };
 
-        setNewPostContent(copyNewPostContent)
+        setNewPostContent(copyNewPostContent);
       }
 
-      setEditingSection(null)
-      setIsOpenEditTextModal(false)
+      setEditingSection(null);
+      setIsOpenEditTextModal(false);
     },
-    [newPostContent]
-  )
+    [newPostContent],
+  );
 
-  const onSelectVideo = React.useCallback((video: any) => {
-    addVideo({
-      name: video.name,
-      identifier: video.identifier,
-      service: video.service,
-      title: video?.metadata?.title,
-      description: video?.metadata?.description
-    })
-  }, [])
+  const onSelectVideo = React.useCallback(
+    (video: any) => {
+      setCoverPickerMode('add');
+      setCoverPickerTarget(null);
+      setPendingVideo(video);
+      setSelectedPoster('');
+      setCoverTab('upload');
+      setCoverPickerOpen(true);
+      fetchExistingImages();
+    },
+    [fetchExistingImages],
+  );
 
   const onSelectAudio = React.useCallback((video: any) => {
     addAudio({
@@ -912,13 +927,13 @@ export const CreatePostBuilder = ({
       identifier: video.identifier,
       service: video.service,
       title: video?.metadata?.title,
-      description: video?.metadata?.description
-    })
-  }, [])
+      description: video?.metadata?.description,
+    });
+  }, []);
 
   const onBreakpointChange = (newBreakpoint: any) => {
-    setCurrentBreakpoint(newBreakpoint)
-  }
+    setCurrentBreakpoint(newBreakpoint);
+  };
 
   const onSelectFile = React.useCallback((video: any) => {
     addFile({
@@ -927,40 +942,44 @@ export const CreatePostBuilder = ({
       service: video.service,
       title: video?.metadata?.title,
       description: video?.metadata?.description,
-      mimeType: video?.metadata?.mimeType
-    })
-  }, [])
+      mimeType: video?.metadata?.mimeType,
+    });
+  }, []);
+
+  const onSelectPoll = React.useCallback((pollName: string) => {
+    const section = { type: 'poll', version: 1, content: { pollName }, id: uid() };
+    setNewPostContent((prev) => [...prev, section]);
+  }, []);
 
   const closeAddTextModal = React.useCallback(() => {
-    setIsOpenAddTextModal(false)
-  }, [])
+    setIsOpenAddTextModal(false);
+  }, []);
 
   const closeEditTextModal = React.useCallback(() => {
-    setIsOpenEditTextModal(false)
-    setEditingSection(null)
-  }, [])
+    setIsOpenEditTextModal(false);
+    setEditingSection(null);
+  }, []);
 
   const onResizeStop = (layout: any, layoutItem: any) => {
-    setCount((prev) => prev + 1)
-  }
+    setCount((prev) => prev + 1);
+  };
   const handleResize = () => {
-    setCount((prev) => prev + 1)
-  }
+    setCount((prev) => prev + 1);
+  };
 
   React.useEffect(() => {
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
-  const gridItemCount =
-    currentBreakpoint === 'md' ? 4 : currentBreakpoint === 'sm' ? 3 : 1
+  const gridItemCount = currentBreakpoint === 'md' ? 4 : currentBreakpoint === 'sm' ? 3 : 1;
 
   const addNav = () => {
-    setIsEditNavOpen(true)
-  }
+    setIsEditNavOpen(true);
+  };
   return (
     <>
       <EditorToolbar
@@ -969,6 +988,7 @@ export const CreatePostBuilder = ({
         onSelectVideo={onSelectVideo}
         onSelectAudio={onSelectAudio}
         onSelectFile={onSelectFile}
+        onSelectPoll={onSelectPoll}
         paddingValue={paddingValue}
         onChangePadding={onChangePadding}
         addNav={addNav}
@@ -987,7 +1007,7 @@ export const CreatePostBuilder = ({
           display: 'flex',
           alignItems: 'center',
           flexDirection: 'column',
-          padding: '10px'
+          padding: '10px',
         }}
       >
         <BlogTitleInput
@@ -1006,13 +1026,13 @@ export const CreatePostBuilder = ({
           sx={{
             maxWidth: '1400px',
             width: '95%',
-            position: 'relative'
+            position: 'relative',
           }}
         >
           <div
             className="test-grid"
             style={{
-              gridTemplateColumns: `repeat(${gridItemCount}, 1fr)`
+              gridTemplateColumns: `repeat(${gridItemCount}, 1fr)`,
             }}
           >
             {Array.from({ length: gridItemCount }, (_, i) => (
@@ -1047,26 +1067,22 @@ export const CreatePostBuilder = ({
                       count={count}
                       padding={paddingValue}
                     >
-                      {editingSection &&
-                      editingSection.id === section.id ? null : (
+                      {editingSection && editingSection.id === section.id ? null : (
                         <Box
                           sx={{
                             position: 'relative',
                             width: '100%',
-                            height: 'auto'
+                            height: 'auto',
                           }}
                         >
-                          <ReadOnlySlate
-                            key={section.id}
-                            content={section.content}
-                          />
+                          <ReadOnlySlate key={section.id} content={section.content} />
                           <EditButtons>
                             <DeleteIcon
                               onClick={() => removeSection(section)}
                               sx={{
                                 cursor: 'pointer',
                                 height: '18px',
-                                width: 'auto'
+                                width: 'auto',
                               }}
                             />
                             <EditIcon
@@ -1074,7 +1090,7 @@ export const CreatePostBuilder = ({
                               sx={{
                                 cursor: 'pointer',
                                 height: '18px',
-                                width: 'auto'
+                                width: 'auto',
                               }}
                             />
                           </EditButtons>
@@ -1082,7 +1098,7 @@ export const CreatePostBuilder = ({
                       )}
                     </DynamicHeightItem>
                   </div>
-                )
+                );
               }
               if (section.type === 'image') {
                 return (
@@ -1100,38 +1116,29 @@ export const CreatePostBuilder = ({
                         sx={{
                           position: 'relative',
                           width: '100%',
-                          height: '100%'
+                          height: '100%',
                         }}
                       >
-                        <img
-                          src={section.content.image}
-                          className="post-image"
-                        />
+                        <img src={section.content.image} className="post-image" />
                         <EditButtons>
                           <DeleteIcon
                             onClick={() => removeSection(section)}
                             sx={{
                               cursor: 'pointer',
                               height: '18px',
-                              width: 'auto'
+                              width: 'auto',
                             }}
                           />
-                          <ImageUploader
-                            onPick={(base64) => editImage(base64, section)}
-                          >
-                            <EditIcon
-                              sx={{
-                                cursor: 'pointer',
-                                height: '18px',
-                                width: 'auto'
-                              }}
-                            />
-                          </ImageUploader>
+                          <ImagePanel
+                            width="18px"
+                            height="18px"
+                            onSelect={(src) => editImage(src, section)}
+                          />
                         </EditButtons>
                       </Box>
                     </DynamicHeightItem>
                   </div>
-                )
+                );
               }
 
               if (section.type === 'video') {
@@ -1149,13 +1156,14 @@ export const CreatePostBuilder = ({
                         sx={{
                           position: 'relative',
                           width: '100%',
-                          height: '100%'
+                          height: '100%',
                         }}
                       >
                         <VideoPlayer
                           name={section.content.name}
                           service={section.content.service}
                           identifier={section.content.identifier}
+                          poster={section.content.poster}
                           from="create"
                         />
                         <EditButtons>
@@ -1164,7 +1172,7 @@ export const CreatePostBuilder = ({
                             sx={{
                               cursor: 'pointer',
                               height: '18px',
-                              width: 'auto'
+                              width: 'auto',
                             }}
                           />
                           <VideoPanel
@@ -1177,17 +1185,29 @@ export const CreatePostBuilder = ({
                                   identifier: video.identifier,
                                   service: video.service,
                                   title: video?.metadata?.title,
-                                  description: video?.metadata?.description
+                                  description: video?.metadata?.description,
                                 },
-                                section
+                                section,
                               )
                             }
+                          />
+                          <AddPhotoAlternateIcon
+                            onClick={() => {
+                              setCoverPickerMode('edit');
+                              setCoverPickerTarget(section);
+                              setPendingVideo(null);
+                              setSelectedPoster(section.content?.poster || '');
+                              setCoverTab('upload');
+                              setCoverPickerOpen(true);
+                              fetchExistingImages();
+                            }}
+                            sx={{ cursor: 'pointer', height: '18px', width: 'auto' }}
                           />
                         </EditButtons>
                       </Box>
                     </DynamicHeightItem>
                   </div>
-                )
+                );
               }
               if (section.type === 'audio') {
                 return (
@@ -1204,7 +1224,7 @@ export const CreatePostBuilder = ({
                         sx={{
                           position: 'relative',
                           width: '100%',
-                          height: '100%'
+                          height: '100%',
                         }}
                       >
                         <AudioElement
@@ -1220,7 +1240,7 @@ export const CreatePostBuilder = ({
                             sx={{
                               cursor: 'pointer',
                               height: '18px',
-                              width: 'auto'
+                              width: 'auto',
                             }}
                           />
                           <AudioPanel
@@ -1233,9 +1253,9 @@ export const CreatePostBuilder = ({
                                   identifier: audio.identifier,
                                   service: audio.service,
                                   title: audio?.metadata?.title,
-                                  description: audio?.metadata?.description
+                                  description: audio?.metadata?.description,
                                 },
-                                section
+                                section,
                               )
                             }
                           />
@@ -1243,7 +1263,7 @@ export const CreatePostBuilder = ({
                       </Box>
                     </DynamicHeightItem>
                   </div>
-                )
+                );
               }
               if (section.type === 'file') {
                 return (
@@ -1260,7 +1280,7 @@ export const CreatePostBuilder = ({
                         sx={{
                           position: 'relative',
                           width: '100%',
-                          height: '100%'
+                          height: '100%',
                         }}
                       >
                         <FileElement
@@ -1279,14 +1299,44 @@ export const CreatePostBuilder = ({
                             sx={{
                               cursor: 'pointer',
                               height: '18px',
-                              width: 'auto'
+                              width: 'auto',
                             }}
                           />
                         </EditButtons>
                       </Box>
                     </DynamicHeightItem>
                   </div>
-                )
+                );
+              }
+              if (section.type === 'poll') {
+                return (
+                  <div key={section.id} className="grid-item">
+                    <DynamicHeightItem
+                      layouts={layouts}
+                      setLayouts={setLayouts}
+                      i={section.id}
+                      breakpoint={currentBreakpoint}
+                      count={count}
+                      padding={paddingValue}
+                    >
+                      <Box sx={{ position: 'relative', width: '100%' }}>
+                        {/* lightweight preview */}
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          Poll: {section.content?.pollName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          The interactive poll will appear in the published post.
+                        </Typography>
+                        <EditButtons>
+                          <DeleteIcon
+                            onClick={() => removeSection(section)}
+                            sx={{ cursor: 'pointer', height: '18px', width: 'auto' }}
+                          />
+                        </EditButtons>
+                      </Box>
+                    </DynamicHeightItem>
+                  </div>
+                );
               }
             })}
           </ResponsiveGridLayout>
@@ -1299,12 +1349,12 @@ export const CreatePostBuilder = ({
               zIndex: 15,
               background: 'deepskyblue',
               padding: '10px',
-              borderRadius: '5px'
+              borderRadius: '5px',
             }}
           >
             <Button
               onClick={() => {
-                setIsOpenPostModal(true)
+                setIsOpenPostModal(true);
               }}
             >
               Publish
@@ -1316,7 +1366,7 @@ export const CreatePostBuilder = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
             }}
           >
             <BlogEditor
@@ -1334,14 +1384,10 @@ export const CreatePostBuilder = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
             }}
           >
-            <BlogEditor
-              value={value}
-              setValue={setValue}
-              editorKey={editorKey}
-            />
+            <BlogEditor value={value} setValue={setValue} editorKey={editorKey} />
           </Box>
           <BuilderButton onClick={() => editPostSection(value, editingSection)}>
             Update Text
@@ -1356,36 +1402,148 @@ export const CreatePostBuilder = ({
           />
         </ReusableModal>
 
-        {!blogContentForEdit && (
-          <PostPublishModal
-            onClose={() => {
-              setIsOpenPostModal(false)
-            }}
-            open={isOpenPostModal}
-            post={post}
-            onPublish={publishQDNResource}
-          />
-        )}
-
-        {blogContentForEdit && blogMetadataForEdit?.metadata && (
-          <PostPublishModal
-            onClose={() => {
-              setIsOpenPostModal(false)
-            }}
-            open={isOpenPostModal}
-            post={post}
-            onPublish={updateQDNResource}
-            mode="edit"
-            metadata={blogMetadataForEdit?.metadata}
-          />
-        )}
+        <PostPublishModal
+          onClose={() => {
+            setIsOpenPostModal(false);
+          }}
+          open={isOpenPostModal}
+          post={post}
+          onPublish={postIdForEdit ? updateQDNResource : publishQDNResource}
+          mode={postIdForEdit ? 'edit' : undefined}
+          metadata={postIdForEdit ? blogMetadataForEdit?.metadata : undefined}
+        />
       </Box>
+      <Dialog
+        open={coverPickerOpen}
+        onClose={() => setCoverPickerOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Select a cover image</DialogTitle>
+        <DialogContent>
+          <Tabs value={coverTab} onChange={(_, v) => setCoverTab(v)}>
+            <Tab label="New" value="upload" />
+            <Tab label="Existing" value="existing" />
+          </Tabs>
+
+          {coverTab === 'upload' && (
+            <Box sx={{ mt: 2 }}>
+              <ImageUploader onPick={(base64) => setSelectedPoster(base64)}>
+                <Button variant="contained">Choose image</Button>
+              </ImageUploader>
+              {selectedPoster && (
+                <Box sx={{ mt: 2 }}>
+                  <img src={selectedPoster} style={{ maxWidth: '100%' }} />
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {coverTab === 'existing' && (
+            <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+              {existingImages.map((img: any) => {
+                const service = img.service || 'IMAGE';
+                const url = qdnResourceUrl(service, img.name, img.identifier);
+                const isActive = selectedPoster === url;
+                return (
+                  <Box
+                    key={`${service}:${img.name}:${img.identifier}`}
+                    sx={{
+                      border: isActive ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setSelectedPoster(url)}
+                  >
+                    <img src={url} style={{ display: 'block', width: '100%' }} />
+                    <Typography variant="caption" sx={{ display: 'block', p: 0.5 }} noWrap>
+                      {img?.metadata?.title || img.identifier}
+                    </Typography>
+                  </Box>
+                );
+              })}
+              {existingImagesLoading && <Typography variant="body2">Loading...</Typography>}
+              {!existingImagesLoading && !existingImages.length && (
+                <Typography variant="body2">No published images found.</Typography>
+              )}
+            </Box>
+          )}
+
+          <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button variant="outlined" color="error" onClick={() => setCoverPickerOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                if (coverPickerMode === 'edit' && coverPickerTarget) {
+                  editVideo(
+                    {
+                      name: coverPickerTarget.content.name,
+                      identifier: coverPickerTarget.content.identifier,
+                      service: coverPickerTarget.content.service,
+                      title: coverPickerTarget.content.title,
+                      description: coverPickerTarget.content.description,
+                      poster: '',
+                    },
+                    coverPickerTarget,
+                  );
+                  setSelectedPoster('');
+                  setCoverPickerOpen(false);
+                } else {
+                  setSelectedPoster('');
+                }
+              }}
+            >
+              Clear cover
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={coverPickerMode === 'add' && !pendingVideo}
+              onClick={() => {
+                const poster = selectedPoster || undefined;
+                if (coverPickerMode === 'add' && pendingVideo) {
+                  addVideo({
+                    name: pendingVideo.name,
+                    identifier: pendingVideo.identifier,
+                    service: pendingVideo.service,
+                    title: pendingVideo?.metadata?.title,
+                    description: pendingVideo?.metadata?.description,
+                    poster,
+                  });
+                } else if (coverPickerMode === 'edit' && coverPickerTarget) {
+                  editVideo(
+                    {
+                      name: coverPickerTarget.content.name,
+                      identifier: coverPickerTarget.content.identifier,
+                      service: coverPickerTarget.content.service,
+                      title: coverPickerTarget.content.title,
+                      description: coverPickerTarget.content.description,
+                      poster,
+                    },
+                    coverPickerTarget,
+                  );
+                }
+                setPendingVideo(null);
+                setCoverPickerTarget(null);
+                setSelectedPoster('');
+                setCoverPickerOpen(false);
+              }}
+            >
+              {coverPickerMode === 'add' ? 'Add video' : 'Update cover'}
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </>
-  )
-}
+  );
+};
 
 export const EditButtons = ({ children }: any) => {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -1400,10 +1558,10 @@ export const EditButtons = ({ children }: any) => {
         padding: '5px',
         borderRadius: '5px',
         alignItems: 'center',
-        backgroundColor: theme.palette.background.paper
+        backgroundColor: theme.palette.background.paper,
       }}
     >
       {children}
     </Box>
-  )
-}
+  );
+};

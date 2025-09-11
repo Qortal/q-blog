@@ -1,75 +1,64 @@
-import * as React from 'react'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import Typography from '@mui/material/Typography'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
-import { useDispatch } from 'react-redux'
-import { setNotification } from '../../../state/features/notificationsSlice'
-import { Box } from '@mui/material'
+import * as React from 'react';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { useDispatch } from 'react-redux';
+import { setNotification } from '../../../state/features/notificationsSlice';
+import { Box } from '@mui/material';
 
-export default function ContextMenuResource({
-  children,
-  name,
-  service,
-  identifier,
-  link
-}: any) {
+export default function ContextMenuResource({ children, name, service, identifier, link }: any) {
   const [contextMenu, setContextMenu] = React.useState<{
-    mouseX: number
-    mouseY: number
-  } | null>(null)
-  const dispatch = useDispatch()
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+  const dispatch = useDispatch();
   const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault()
+    event.preventDefault();
     setContextMenu(
       contextMenu === null
         ? {
             mouseX: event.clientX + 2,
-            mouseY: event.clientY - 6
+            mouseY: event.clientY - 6,
           }
         : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
           // Other native context menus might behave different.
           // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
-          null
-    )
-  }
+          null,
+    );
+  };
 
   const handleClose = () => {
-    setContextMenu(null)
-  }
+    setContextMenu(null);
+  };
 
   return (
-    <div
-      onContextMenu={handleContextMenu}
-      style={{ cursor: 'context-menu', width: '100%' }}
-    >
+    <div onContextMenu={handleContextMenu} style={{ cursor: 'context-menu', width: '100%' }}>
       {children}
       <Menu
         open={contextMenu !== null}
         onClose={handleClose}
         anchorReference="anchorPosition"
         anchorPosition={
-          contextMenu !== null
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : undefined
+          contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined
         }
       >
         <MenuItem>
           <CopyToClipboard
             text={link}
             onCopy={() => {
-              handleClose()
+              handleClose();
               dispatch(
                 setNotification({
                   msg: 'Copied to clipboard!',
-                  alertType: 'success'
-                })
-              )
+                  alertType: 'success',
+                }),
+              );
             }}
           >
             <Box
               sx={{
-                fontSize: '16px'
+                fontSize: '16px',
               }}
             >
               Copy Link
@@ -78,5 +67,5 @@ export default function ContextMenuResource({
         </MenuItem>
       </Menu>
     </div>
-  )
+  );
 }

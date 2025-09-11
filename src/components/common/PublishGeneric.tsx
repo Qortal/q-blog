@@ -1,26 +1,26 @@
-import React from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { setNotification } from '../../state/features/notificationsSlice'
-import { RootState } from '../../state/store'
-import ShortUniqueId from 'short-unique-id'
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setNotification } from '../../state/features/notificationsSlice';
+import { RootState } from '../../state/store';
+import ShortUniqueId from 'short-unique-id';
 
-const uid = new ShortUniqueId()
+const uid = new ShortUniqueId();
 
 interface IPublishGeneric {
-  title: string
-  description: string
-  base64?: string
-  file?: File
-  category: string
-  service: string
-  identifierPrefix: string
-  filename: string
-  editVideoIdentifier?: string | null | undefined
+  title: string;
+  description: string;
+  base64?: string;
+  file?: File;
+  category: string;
+  service: string;
+  identifierPrefix: string;
+  filename: string;
+  editVideoIdentifier?: string | null | undefined;
 }
 
 export const usePublishGeneric = () => {
-  const { user } = useSelector((state: RootState) => state.auth)
-  const dispatch = useDispatch()
+  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const publishGeneric = async ({
     editVideoIdentifier,
     service,
@@ -33,43 +33,43 @@ export const usePublishGeneric = () => {
     category,
     ...rest
   }: IPublishGeneric) => {
-    let address
-    let name
-    let errorMsg = ''
+    let address;
+    let name;
+    let errorMsg = '';
 
-    address = user?.address
-    name = user?.name || ''
+    address = user?.address;
+    name = user?.name || '';
 
-    const missingFields = []
+    const missingFields = [];
     if (!address) {
-      errorMsg = "Cannot post: your address isn't available"
+      errorMsg = "Cannot post: your address isn't available";
     }
     if (!name) {
-      errorMsg = 'Cannot post without a name'
+      errorMsg = 'Cannot post without a name';
     }
-    if (!title) missingFields.push('title')
+    if (!title) missingFields.push('title');
     if (missingFields.length > 0) {
-      const missingFieldsString = missingFields.join(', ')
-      const errMsg = `Missing: ${missingFieldsString}`
-      errorMsg = errMsg
+      const missingFieldsString = missingFields.join(', ');
+      const errMsg = `Missing: ${missingFieldsString}`;
+      errorMsg = errMsg;
     }
 
     if (errorMsg) {
       dispatch(
         setNotification({
           msg: errorMsg,
-          alertType: 'error'
-        })
-      )
-      throw new Error(errorMsg)
+          alertType: 'error',
+        }),
+      );
+      throw new Error(errorMsg);
     }
 
     try {
-      const id = uid()
+      const id = uid();
 
-      let identifier = `${identifierPrefix}_${id}`
+      let identifier = `${identifierPrefix}_${id}`;
       if (editVideoIdentifier) {
-        identifier = editVideoIdentifier
+        identifier = editVideoIdentifier;
       }
 
       const resourceResponse = await qortalRequest({
@@ -82,39 +82,38 @@ export const usePublishGeneric = () => {
         category: category,
         filename,
         ...rest,
-        identifier: identifier
-      })
+        identifier: identifier,
+      });
       dispatch(
         setNotification({
           msg: `${service} successfully published`,
-          alertType: 'success'
-        })
-      )
-      return resourceResponse
+          alertType: 'success',
+        }),
+      );
+      return resourceResponse;
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || `Failed to publish ${service}`,
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || `Failed to publish ${service}`,
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
-          msg:
-            error?.message || error?.message || `Failed to publish ${service}`,
-          alertType: 'error'
-        }
+          msg: error?.message || error?.message || `Failed to publish ${service}`,
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
     }
-  }
+  };
   return {
-    publishGeneric
-  }
-}
+    publishGeneric,
+  };
+};

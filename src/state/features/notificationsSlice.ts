@@ -1,32 +1,32 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface AlertTypes {
-  alertSuccess: string
-  alertError: string
-  alertInfo: string
+  alertSuccess: string;
+  alertError: string;
+  alertInfo: string;
 }
 
 interface InitialState {
-  alertTypes: AlertTypes
+  alertTypes: AlertTypes;
 }
 
 const initialState: InitialState = {
   alertTypes: {
     alertSuccess: '',
     alertError: '',
-    alertInfo: ''
-  }
-}
+    alertInfo: '',
+  },
+};
 
 export const notificationsSlice = createSlice({
-  name: "notifications",
+  name: 'notifications',
   initialState,
   reducers: {
     setNotification: (
       state: InitialState,
-      action: PayloadAction<{ alertType: string; msg: string }>
+      action: PayloadAction<{ alertType: string; msg: string }>,
     ) => {
-      if (action.payload.alertType === "success") {
+      if (action.payload.alertType === 'success') {
         return {
           ...state,
           alertTypes: {
@@ -34,7 +34,7 @@ export const notificationsSlice = createSlice({
             alertSuccess: action.payload.msg,
           },
         };
-      } else if (action.payload.alertType === "error") {
+      } else if (action.payload.alertType === 'error') {
         return {
           ...state,
           alertTypes: {
@@ -42,7 +42,7 @@ export const notificationsSlice = createSlice({
             alertError: action.payload.msg,
           },
         };
-      } else if (action.payload.alertType === "info") {
+      } else if (action.payload.alertType === 'info') {
         return {
           ...state,
           alertTypes: {
@@ -60,14 +60,13 @@ export const notificationsSlice = createSlice({
           ...state.alertTypes,
           alertSuccess: '',
           alertError: '',
-          alertInfo: ''
-        }
-      }
+          alertInfo: '',
+        },
+      };
     },
   },
 });
 
-export const { setNotification, removeNotification } =
-  notificationsSlice.actions;
+export const { setNotification, removeNotification } = notificationsSlice.actions;
 
 export default notificationsSlice.reducer;

@@ -1,17 +1,14 @@
-import * as React from 'react'
-import { styled, useTheme } from '@mui/material/styles'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
+import * as React from 'react';
+import { styled, useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'
-import { MyContext } from '../wrappers/DownloadWrapper'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../state/store'
-import { CircularProgress } from '@mui/material'
-import {
-  setCurrAudio,
-  setShowingAudioPlayer
-} from '../state/features/globalSlice'
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import { MyContext } from '../wrappers/DownloadWrapper';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../state/store';
+import { CircularProgress } from '@mui/material';
+import { setCurrAudio, setShowingAudioPlayer } from '../state/features/globalSlice';
 
 const Widget = styled('div')(({ theme }) => ({
   padding: 16,
@@ -25,9 +22,9 @@ const Widget = styled('div')(({ theme }) => ({
   background: 'skyblue',
   transition: '0.2s all',
   '&:hover': {
-    opacity: 0.75
-  }
-}))
+    opacity: 0.75,
+  },
+}));
 
 const CoverImage = styled('div')({
   width: 100,
@@ -38,25 +35,25 @@ const CoverImage = styled('div')({
   borderRadius: 8,
   backgroundColor: 'rgba(0,0,0,0.08)',
   '& > img': {
-    width: '100%'
-  }
-})
+    width: '100%',
+  },
+});
 
 const TinyText = styled(Typography)({
   fontSize: '0.75rem',
   opacity: 0.38,
   fontWeight: 500,
-  letterSpacing: 0.2
-})
+  letterSpacing: 0.2,
+});
 
 interface IAudioElement {
-  onClick: () => void
-  title: string
-  description: string
-  author: string
-  audioInfo?: any
-  postId?: string
-  user?: string
+  onClick: () => void;
+  title: string;
+  description: string;
+  author: string;
+  audioInfo?: any;
+  postId?: string;
+  user?: string;
 }
 
 export default function AudioElement({
@@ -66,35 +63,35 @@ export default function AudioElement({
   author,
   audioInfo,
   postId,
-  user
+  user,
 }: IAudioElement) {
-  const { downloadVideo } = React.useContext(MyContext)
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  const { downloads } = useSelector((state: RootState) => state.global)
-  const reDownload = React.useRef<boolean>(false)
+  const { downloadVideo } = React.useContext(MyContext);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { downloads } = useSelector((state: RootState) => state.global);
+  const reDownload = React.useRef<boolean>(false);
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const download = React.useMemo(() => {
-    if (!downloads || !audioInfo?.identifier) return {}
-    const findDownload = downloads[audioInfo?.identifier]
+    if (!downloads || !audioInfo?.identifier) return {};
+    const findDownload = downloads[audioInfo?.identifier];
 
-    if (!findDownload) return {}
-    return findDownload
-  }, [downloads, audioInfo])
+    if (!findDownload) return {};
+    return findDownload;
+  }, [downloads, audioInfo]);
 
   const resourceStatus = React.useMemo(() => {
-    return download?.status || {}
-  }, [download])
+    return download?.status || {};
+  }, [download]);
   const handlePlay = () => {
-    if (!postId) return
-    const { name, service, identifier } = audioInfo
+    if (!postId) return;
+    const { name, service, identifier } = audioInfo;
 
     if (download && resourceStatus?.status === 'READY') {
-      dispatch(setShowingAudioPlayer(true))
-      dispatch(setCurrAudio(identifier))
-      return
+      dispatch(setShowingAudioPlayer(true));
+      dispatch(setCurrAudio(identifier));
+      return;
     }
-    setIsLoading(true)
+    setIsLoading(true);
     downloadVideo({
       name,
       service,
@@ -104,28 +101,25 @@ export default function AudioElement({
         user,
         audioTitle: title,
         audioDescription: description,
-        audioAuthor: author
-      }
-    })
-    dispatch(setCurrAudio(identifier))
-    dispatch(setShowingAudioPlayer(true))
-  }
+        audioAuthor: author,
+      },
+    });
+    dispatch(setCurrAudio(identifier));
+    dispatch(setShowingAudioPlayer(true));
+  };
 
   React.useEffect(() => {
     if (resourceStatus?.status === 'READY') {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [resourceStatus])
+  }, [resourceStatus]);
 
   React.useEffect(() => {
-    if (
-      resourceStatus?.status === 'DOWNLOADED' &&
-      reDownload?.current === false
-    ) {
-      handlePlay()
-      reDownload.current = true
+    if (resourceStatus?.status === 'DOWNLOADED' && reDownload?.current === false) {
+      handlePlay();
+      reDownload.current = true;
     }
-  }, [handlePlay, resourceStatus])
+  }, [handlePlay, resourceStatus]);
   return (
     <Box
       onClick={handlePlay}
@@ -133,7 +127,7 @@ export default function AudioElement({
         width: '100%',
         overflow: 'hidden',
         position: 'relative',
-        cursor: 'pointer'
+        cursor: 'pointer',
       }}
     >
       <Widget>
@@ -142,16 +136,12 @@ export default function AudioElement({
             <AudiotrackIcon
               sx={{
                 width: '90%',
-                height: 'auto'
+                height: 'auto',
               }}
             />
           </CoverImage>
           <Box sx={{ ml: 1.5, minWidth: 0 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              fontWeight={500}
-            >
+            <Typography variant="caption" color="text.secondary" fontWeight={500}>
               {author}
             </Typography>
             <Typography noWrap>
@@ -162,8 +152,7 @@ export default function AudioElement({
             </Typography>
           </Box>
         </Box>
-        {((resourceStatus.status && resourceStatus?.status !== 'READY') ||
-          isLoading) && (
+        {((resourceStatus.status && resourceStatus?.status !== 'READY') || isLoading) && (
           <Box
             position="absolute"
             top={0}
@@ -180,7 +169,7 @@ export default function AudioElement({
               flexDirection: 'column',
               gap: '10px',
               padding: '16px',
-              borderRadius: '16px'
+              borderRadius: '16px',
             }}
           >
             <CircularProgress color="secondary" />
@@ -190,15 +179,14 @@ export default function AudioElement({
                 component="div"
                 sx={{
                   color: 'white',
-                  fontSize: '14px'
+                  fontSize: '14px',
                 }}
               >
                 {resourceStatus?.status === 'REFETCHING' ? (
                   <>
                     <>
                       {(
-                        (resourceStatus?.localChunkCount /
-                          resourceStatus?.totalChunkCount) *
+                        (resourceStatus?.localChunkCount / resourceStatus?.totalChunkCount) *
                         100
                       )?.toFixed(0)}
                       %
@@ -211,8 +199,7 @@ export default function AudioElement({
                 ) : resourceStatus?.status !== 'READY' ? (
                   <>
                     {(
-                      (resourceStatus?.localChunkCount /
-                        resourceStatus?.totalChunkCount) *
+                      (resourceStatus?.localChunkCount / resourceStatus?.totalChunkCount) *
                       100
                     )?.toFixed(0)}
                     %
@@ -226,5 +213,5 @@ export default function AudioElement({
         )}
       </Widget>
     </Box>
-  )
+  );
 }

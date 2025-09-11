@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react';
 
 import {
   Button,
@@ -15,90 +15,90 @@ import {
   OutlinedInput,
   List,
   ListItem,
-  useTheme
-} from '@mui/material'
-import { styled } from '@mui/system'
-import { useSelector } from 'react-redux'
-import { RootState } from '../../../../state/store'
-import ShortUniqueId from 'short-unique-id'
-import DeleteIcon from '@mui/icons-material/Delete'
-import { CustomIcon } from '../../../../components/common/CustomIcon'
+  useTheme,
+} from '@mui/material';
+import { styled } from '@mui/system';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../../state/store';
+import ShortUniqueId from 'short-unique-id';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { CustomIcon } from '../../../../components/common/CustomIcon';
 
-const uid = new ShortUniqueId()
+const uid = new ShortUniqueId();
 interface INavbar {
-  saveNav: (navMenu: any, navbarConfig: any) => void
-  removeNav: () => void
-  close: () => void
+  saveNav: (navMenu: any, navbarConfig: any) => void;
+  removeNav: () => void;
+  close: () => void;
 }
 
 export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
-  const { user } = useSelector((state: RootState) => state.auth)
-  const { currentBlog } = useSelector((state: RootState) => state.global)
-  const theme = useTheme()
-  const [navTitle, setNavTitle] = React.useState<string>('')
-  const [blogPostOption, setBlogPostOption] = React.useState<any | null>(null)
-  const [options, setOptions] = React.useState<any>([])
-  const [navItems, setNavItems] = React.useState<any>([])
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { currentBlog } = useSelector((state: RootState) => state.global);
+  const theme = useTheme();
+  const [navTitle, setNavTitle] = React.useState<string>('');
+  const [blogPostOption, setBlogPostOption] = React.useState<any | null>(null);
+  const [options, setOptions] = React.useState<any>([]);
+  const [navItems, setNavItems] = React.useState<any>([]);
   const handleOptionChange = (event: SelectChangeEvent<string>) => {
-    const optionId = event.target.value
-    const selectedOption = options.find((option: any) => option.id === optionId)
-    setBlogPostOption(selectedOption || null)
-  }
+    const optionId = event.target.value;
+    const selectedOption = options.find((option: any) => option.id === optionId);
+    setBlogPostOption(selectedOption || null);
+  };
 
   useEffect(() => {
     if (currentBlog && currentBlog?.navbarConfig) {
-      const { navItems } = currentBlog.navbarConfig
-      if (!navItems || !Array.isArray(navItems)) return
+      const { navItems } = currentBlog.navbarConfig;
+      if (!navItems || !Array.isArray(navItems)) return;
 
-      setNavItems(navItems)
+      setNavItems(navItems);
     }
-  }, [currentBlog])
+  }, [currentBlog]);
 
   const getOptions = useCallback(async () => {
-    if (!user || !currentBlog) return
-    const name = user?.name
-    const blog = currentBlog?.blogId
+    if (!user || !currentBlog) return;
+    const name = user?.name;
+    const blog = currentBlog?.blogId;
 
     try {
       //TODO - NAME SHOULD BE EXACT
-      const url = `/arbitrary/resources/search?mode=ALL&service=BLOG_POST&query=${blog}-post-&exactmatchnames=true&name=${name}&includemetadata=true&reverse=true&limit=0`
+      const url = `/arbitrary/resources/search?mode=ALL&service=BLOG_POST&query=${blog}-post-&exactmatchnames=true&name=${name}&includemetadata=true&reverse=true&limit=0`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      const responseData = await response.json()
+          'Content-Type': 'application/json',
+        },
+      });
+      const responseData = await response.json();
       const formatOptions = responseData.map((option: any) => {
         return {
           id: option.identifier,
-          name: option?.metadata.title
-        }
-      })
+          name: option?.metadata.title,
+        };
+      });
 
-      setOptions(formatOptions)
+      setOptions(formatOptions);
     } catch (error) {}
-  }, [])
+  }, []);
   useEffect(() => {
-    getOptions()
-  }, [getOptions])
+    getOptions();
+  }, [getOptions]);
   const addToNav = () => {
-    if (!navTitle || !blogPostOption) return
+    if (!navTitle || !blogPostOption) return;
     setNavItems((prev: any) => [
       ...prev,
       {
         id: uid(),
         name: navTitle,
         postId: blogPostOption.id,
-        postName: blogPostOption.name
-      }
-    ])
-  }
+        postName: blogPostOption.name,
+      },
+    ]);
+  };
 
   const handleSaveNav = () => {
-    if (!currentBlog) return
-    saveNav(navItems, currentBlog?.navbarConfig || {})
-  }
+    if (!currentBlog) return;
+    saveNav(navItems, currentBlog?.navbarConfig || {});
+  };
 
   return (
     <>
@@ -106,7 +106,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          gap: 1,
         }}
       >
         <Box
@@ -114,7 +114,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
           }}
         >
           <Box>
@@ -123,15 +123,13 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
               variant="outlined"
               fullWidth
               value={navTitle}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNavTitle(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNavTitle(e.target.value)}
               inputProps={{ maxLength: 40 }}
               sx={{
                 marginBottom: 2,
                 backgroundColor: theme.palette.primary.light,
                 color: theme.palette.text.primary,
-                border: `1px solid ${theme.palette.text.primary}`
+                border: `1px solid ${theme.palette.text.primary}`,
               }}
             />
           </Box>
@@ -143,7 +141,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
                 width: '150px',
                 backgroundColor: theme.palette.primary.light,
                 color: theme.palette.text.primary,
-                border: `1px solid ${theme.palette.text.primary}`
+                border: `1px solid ${theme.palette.text.primary}`,
               }}
             >
               <InputLabel sx={{ color: theme.palette.text.primary }} id="Post">
@@ -156,8 +154,8 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
                 onChange={handleOptionChange}
                 MenuProps={{
                   sx: {
-                    maxHeight: '300px' // Adjust this value to set the max height,
-                  }
+                    maxHeight: '300px', // Adjust this value to set the max height,
+                  },
                 }}
               >
                 {options.map((option: any) => (
@@ -178,7 +176,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
             sx={{
               backgroundColor: theme.palette.primary.light,
               color: theme.palette.text.primary,
-              border: `1px solid ${theme.palette.text.primary}`
+              border: `1px solid ${theme.palette.text.primary}`,
             }}
             onClick={addToNav}
           >
@@ -194,7 +192,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
             display: 'flex',
             flexDirection: 'column',
             flex: '1',
-            overflow: 'auto'
+            overflow: 'auto',
           }}
         >
           {navItems.map((navItem: any) => (
@@ -203,12 +201,12 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px'
+                gap: '10px',
               }}
             >
               <Typography
                 sx={{
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
                 }}
               >
                 {navItem.name}
@@ -217,9 +215,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
               <CustomIcon
                 component={DeleteIcon}
                 onClick={() =>
-                  setNavItems((prev: any) =>
-                    prev.filter((item: any) => item.id !== navItem.id)
-                  )
+                  setNavItems((prev: any) => prev.filter((item: any) => item.id !== navItem.id))
                 }
               />
             </ListItem>
@@ -230,7 +226,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
         sx={{
           backgroundColor: theme.palette.primary.dark,
           color: theme.palette.text.primary,
-          fontFamily: 'Arial'
+          fontFamily: 'Arial',
         }}
         onClick={handleSaveNav}
       >
@@ -240,7 +236,7 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
         sx={{
           backgroundColor: theme.palette.primary.dark,
           color: theme.palette.text.primary,
-          fontFamily: 'Arial'
+          fontFamily: 'Arial',
         }}
         onClick={removeNav}
       >
@@ -250,12 +246,12 @@ export const Navbar = ({ saveNav, removeNav, close }: INavbar) => {
         sx={{
           backgroundColor: theme.palette.primary.dark,
           color: theme.palette.text.primary,
-          fontFamily: 'Arial'
+          fontFamily: 'Arial',
         }}
         onClick={close}
       >
         Close
       </Button>
     </>
-  )
-}
+  );
+};

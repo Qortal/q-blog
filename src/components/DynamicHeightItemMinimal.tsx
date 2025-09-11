@@ -1,17 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react'
-import ReactResizeDetector from 'react-resize-detector'
-import { Layouts, Layout } from 'react-grid-layout'
+import React, { useRef, useState, useEffect } from 'react';
+import ReactResizeDetector from 'react-resize-detector';
+import { Layouts, Layout } from 'react-grid-layout';
 
 interface DynamicHeightItemProps {
-  children: React.ReactNode
-  layouts: Layouts
-  setLayouts: (layouts: any) => void
-  i: string
-  breakpoint: keyof Layouts
-  rows?: number
-  count?: number
-  type?: string
-  padding?: number
+  children: React.ReactNode;
+  layouts: Layouts;
+  setLayouts: (layouts: any) => void;
+  i: string;
+  breakpoint: keyof Layouts;
+  rows?: number;
+  count?: number;
+  type?: string;
+  padding?: number;
 }
 
 export const DynamicHeightItemMinimal: React.FC<DynamicHeightItemProps> = ({
@@ -23,17 +23,17 @@ export const DynamicHeightItemMinimal: React.FC<DynamicHeightItemProps> = ({
   rows = 1,
   count,
   type,
-  padding
+  padding,
 }) => {
   return (
     <div style={{ width: '100%', height: 'auto' }}>
       <div
         style={{
-          padding: `${padding ? padding : 0}px`
+          padding: `${padding ? padding : 0}px`,
         }}
       >
         {children}
       </div>
     </div>
-  )
-}
+  );
+};

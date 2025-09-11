@@ -157,6 +157,31 @@ a:focus {
 }
 
 .glow {
-  box-shadow: 0 0 10px #9ecaed, 0 0 20px #9ecaed, 0 0 30px #9ecaed,
-    0 0 40px #9ecaed;
+  box-shadow: 0 0 10px #9ecaed, 0 0 20px #9ecaed, 0 0 30px #9ecaed, 0 0 40px #9ecaed;
+}
+
+.list-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 15px 20px;
+}
+
+.list-view-item {
+  width: 100%;
+  position: relative;
+}
+.list-view-item .MuiCard-root {
+  width: 100%;
+  max-width: none;
+}
+.list-view-item .MuiCard-root .list-image-col {
+  max-width: 40%;
+}
+
+@media (max-width: 450px) {
+  .list-view-container {
+    padding: 10px 12px;
+    gap: 12px;
+  }
 }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { styled, Box } from '@mui/system'
+import React, { useState, useEffect } from 'react';
+import { styled, Box } from '@mui/system';
 import {
   Drawer,
   List,
@@ -8,24 +8,24 @@ import {
   Typography,
   ButtonBase,
   Button,
-  Tooltip
-} from '@mui/material'
-import VideoCallIcon from '@mui/icons-material/VideoCall'
-import VideoModal from './VideoPublishModal'
-import { useSelector } from 'react-redux'
-import { RootState } from '../../state/store'
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import { AudioModal } from './AudioPublishModal'
-import AudioFileIcon from '@mui/icons-material/AudioFile'
-import { GenericModal } from './GenericPublishModal'
+  Tooltip,
+} from '@mui/material';
+import VideoCallIcon from '@mui/icons-material/VideoCall';
+import VideoModal from './VideoPublishModal';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../state/store';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { AudioModal } from './AudioPublishModal';
+import AudioFileIcon from '@mui/icons-material/AudioFile';
+import { GenericModal } from './GenericPublishModal';
 interface VideoPanelProps {
-  onSelect: (video: Video) => void
-  height?: string
-  width?: string
+  onSelect: (video: Video) => void;
+  height?: string;
+  width?: string;
 }
 
 interface VideoApiResponse {
-  videos: Video[]
+  videos: Video[];
 }
 
 const Panel = styled('div')`
@@ -51,7 +51,7 @@ const Panel = styled('div')`
   &::-webkit-scrollbar-thumb:hover {
     background-color: #555;
   }
-`
+`;
 
 const PublishButton = styled(Button)`
   /* position: absolute;
@@ -60,24 +60,18 @@ const PublishButton = styled(Button)`
   right: 0;
   margin: auto; */
   max-width: 80%;
-`
+`;
 
-export const FilePanel: React.FC<VideoPanelProps> = ({
-  onSelect,
-  height,
-  width
-}) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [videos, setVideos] = useState<Video[]>([])
-  const [isOpenVideoModal, setIsOpenVideoModal] = useState<boolean>(false)
-  const { user } = useSelector((state: RootState) => state.auth)
-  const [editVideoIdentifier, setEditVideoIdentifier] = useState<
-    string | null | undefined
-  >()
+export const FilePanel: React.FC<VideoPanelProps> = ({ onSelect, height, width }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [isOpenVideoModal, setIsOpenVideoModal] = useState<boolean>(false);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [editVideoIdentifier, setEditVideoIdentifier] = useState<string | null | undefined>();
   const fetchVideos = React.useCallback(async (): Promise<Video[]> => {
-    if (!user?.name) return []
+    if (!user?.name) return [];
 
-    let res = []
+    let res = [];
     try {
       // res = await qortalRequest({
       //   action: 'LIST_QDN_RESOURCES',
@@ -90,34 +84,34 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
       // })
 
       const res2 = await fetch(
-        `/arbitrary/resources?&service=FILE&name=${user.name}&includemetadata=true&limit=100&offset=0&reverse=true`
-      )
-      const resData = await res2.json()
+        `/arbitrary/resources?&service=FILE&name=${user.name}&includemetadata=true&limit=100&offset=0&reverse=true`,
+      );
+      const resData = await res2.json();
       if (Array.isArray(resData)) {
-        res = resData
+        res = resData;
       }
     } catch (error) {}
 
     // Replace this URL with the actual API endpoint
 
-    return res
-  }, [user])
+    return res;
+  }, [user]);
   useEffect(() => {
-    fetchVideos().then((fetchedVideos) => setVideos(fetchedVideos))
-  }, [])
+    fetchVideos().then((fetchedVideos) => setVideos(fetchedVideos));
+  }, []);
 
   const handleToggle = () => {
-    setIsOpen(!isOpen)
-  }
+    setIsOpen(!isOpen);
+  };
 
   const handleClick = (video: Video) => {
-    onSelect(video)
-  }
+    onSelect(video);
+  };
 
   return (
     <Box
       sx={{
-        display: 'flex'
+        display: 'flex',
       }}
     >
       <Tooltip title="Add any type of file" arrow>
@@ -126,7 +120,7 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
           sx={{
             height: height || '30px',
             width: width || 'auto',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         ></AttachFileIcon>
       </Tooltip>
@@ -135,12 +129,12 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
         open={isOpen}
         onClose={handleToggle}
         ModalProps={{
-          keepMounted: true // Better performance on mobile
+          keepMounted: true, // Better performance on mobile
         }}
         sx={{
           '& .MuiPaper-root': {
-            width: '400px'
-          }
+            width: '400px',
+          },
         }}
       >
         <Panel>
@@ -149,21 +143,13 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              flex: '0 0'
+              flex: '0 0',
             }}
           >
-            <Typography
-              variant="h5"
-              component="div"
-              sx={{ flexGrow: 1, mt: 2, mb: 1 }}
-            >
+            <Typography variant="h5" component="div" sx={{ flexGrow: 1, mt: 2, mb: 1 }}>
               Select File
             </Typography>
-            <Typography
-              variant="subtitle2"
-              component="div"
-              sx={{ flexGrow: 1, mb: 2 }}
-            >
+            <Typography variant="subtitle2" component="div" sx={{ flexGrow: 1, mb: 2 }}>
               List of Files in QDN under your name (FILE service)
             </Typography>
           </Box>
@@ -174,15 +160,12 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
               display: 'flex',
               flexDirection: 'column',
               flex: '1',
-              overflow: 'auto'
+              overflow: 'auto',
             }}
           >
             {videos.map((video) => (
               <ListItem key={video.identifier}>
-                <ButtonBase
-                  onClick={() => handleClick(video)}
-                  sx={{ width: '100%' }}
-                >
+                <ButtonBase onClick={() => handleClick(video)} sx={{ width: '100%' }}>
                   <ListItemText
                     primary={video?.metadata?.title || ''}
                     secondary={video?.metadata?.description || ''}
@@ -192,8 +175,8 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
                   size="small"
                   variant="contained"
                   onClick={() => {
-                    setEditVideoIdentifier(video.identifier)
-                    setIsOpenVideoModal(true)
+                    setEditVideoIdentifier(video.identifier);
+                    setIsOpenVideoModal(true);
                   }}
                 >
                   Edit
@@ -206,14 +189,14 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
               width: '100%',
               display: 'flex',
               justifyContent: 'center',
-              flex: '0 0 50px'
+              flex: '0 0 50px',
             }}
           >
             <PublishButton
               variant="contained"
               onClick={() => {
-                setEditVideoIdentifier(null)
-                setIsOpenVideoModal(true)
+                setEditVideoIdentifier(null);
+                setIsOpenVideoModal(true);
               }}
             >
               Publish new file
@@ -225,33 +208,33 @@ export const FilePanel: React.FC<VideoPanelProps> = ({
         service="FILE"
         identifierPrefix="qfile_qblog"
         onClose={() => {
-          setIsOpenVideoModal(false)
-          setEditVideoIdentifier(null)
+          setIsOpenVideoModal(false);
+          setEditVideoIdentifier(null);
         }}
         open={isOpenVideoModal}
         onPublish={(value) => {
-          fetchVideos().then((fetchedVideos) => setVideos(fetchedVideos))
-          setIsOpenVideoModal(false)
+          fetchVideos().then((fetchedVideos) => setVideos(fetchedVideos));
+          setIsOpenVideoModal(false);
         }}
         editVideoIdentifier={editVideoIdentifier}
       />
     </Box>
-  )
-}
+  );
+};
 
 // Add this to your 'types.ts' file
 export interface Video {
-  name: string
-  service: string
-  identifier: string
+  name: string;
+  service: string;
+  identifier: string;
   metadata: {
-    title: string
-    description: string
-    tags: string[]
-    category: string
-    categoryName: string
-  }
-  size: number
-  created: number
-  updated: number
+    title: string;
+    description: string;
+    tags: string[];
+    category: string;
+    categoryName: string;
+  };
+  size: number;
+  created: number;
+  updated: number;
 }

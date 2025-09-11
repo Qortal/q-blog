@@ -1,66 +1,89 @@
-import React, { useEffect } from 'react'
-import BlogEditor from '../../components/editor/BlogEditor'
-import ShortUniqueId from 'short-unique-id'
-import ReadOnlySlate from '../../components/editor/ReadOnlySlate'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../../state/store'
-import TextField from '@mui/material/TextField'
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
-import ImageUploader from '../../components/common/ImageUploader'
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'
-import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
-import { Button, Box, useTheme } from '@mui/material'
-import { styled } from '@mui/system'
-import { Descendant } from 'slate'
-import EditIcon from '@mui/icons-material/Edit'
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle'
-import { extractTextFromSlate } from '../../utils/extractTextFromSlate'
-import { setNotification } from '../../state/features/notificationsSlice'
-import { VideoPanel } from '../../components/common/VideoPanel'
-import PostPublishModal from '../../components/common/PostPublishModal'
-import { Responsive, WidthProvider } from 'react-grid-layout'
-import '/node_modules/react-grid-layout/css/styles.css'
-import '/node_modules/react-resizable/css/styles.css'
-import { ReusableModal } from '../../components/modals/ReusableModal'
-import { VideoPlayer } from '../../components/common/VideoPlayer'
-import { EditorToolbar } from './components/Toolbar/EditorToolbar'
-import { DynamicHeightItemMinimal } from '../../components/DynamicHeightItemMinimal'
-import AudioElement from '../../components/AudioElement'
-import DeleteIcon from '@mui/icons-material/Delete'
+// Helper: derive blogId for publish (supports edit without currentBlog)
+const computeBlogIdForPublish = (currentBlog: any, blogMetadataForEdit?: any): string | null => {
+  if (
+    blogMetadataForEdit &&
+    typeof blogMetadataForEdit.blogId === 'string' &&
+    blogMetadataForEdit.blogId
+  ) {
+    return blogMetadataForEdit.blogId;
+  }
+  if (currentBlog && typeof currentBlog.blogId === 'string') return currentBlog.blogId;
+  return null;
+};
+import React, { useEffect } from 'react';
+import BlogEditor from '../../components/editor/BlogEditor';
+import ShortUniqueId from 'short-unique-id';
+import ReadOnlySlate from '../../components/editor/ReadOnlySlate';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../state/store';
+import TextField from '@mui/material/TextField';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import ImageUploader from '../../components/common/ImageUploader';
+import { ImagePanel } from '../../components/common/ImagePanel';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
+import {
+  Button,
+  Box,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Tabs,
+  Tab,
+  Typography,
+} from '@mui/material';
+import { styled } from '@mui/system';
+import { Descendant } from 'slate';
+import EditIcon from '@mui/icons-material/Edit';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import { extractTextFromSlate } from '../../utils/extractTextFromSlate';
+import { setNotification } from '../../state/features/notificationsSlice';
+import { VideoPanel } from '../../components/common/VideoPanel';
+import PostPublishModal from '../../components/common/PostPublishModal';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import '/node_modules/react-grid-layout/css/styles.css';
+import '/node_modules/react-resizable/css/styles.css';
+import { ReusableModal } from '../../components/modals/ReusableModal';
+import { VideoPlayer } from '../../components/common/VideoPlayer';
+import { EditorToolbar } from './components/Toolbar/EditorToolbar';
+import { DynamicHeightItemMinimal } from '../../components/DynamicHeightItemMinimal';
+import AudioElement from '../../components/AudioElement';
+import DeleteIcon from '@mui/icons-material/Delete';
 
-import { AudioPanel } from '../../components/common/AudioPanel'
-import { EditButtons } from './CreatePostBuilder'
+import { AudioPanel } from '../../components/common/AudioPanel';
+import { EditButtons } from './CreatePostBuilder';
 import {
   addPostToBeginning,
   addToHashMap,
   updateInHashMap,
-  updatePost
-} from '../../state/features/blogSlice'
-import { useNavigate } from 'react-router-dom'
-import { removePrefix } from '../../utils/blogIdformats'
-import { BuilderButton } from './CreatePost-styles'
-import FileElement from '../../components/FileElement'
-const ResponsiveGridLayout = WidthProvider(Responsive)
-const initialMinHeight = 2 // Define an initial minimum height for grid items
-const uid = new ShortUniqueId()
+  updatePost,
+} from '../../state/features/blogSlice';
+import { useNavigate } from 'react-router-dom';
+import { removePrefix } from '../../utils/blogIdformats';
+import { BuilderButton } from './CreatePost-styles';
+import FileElement from '../../components/FileElement';
+const ResponsiveGridLayout = WidthProvider(Responsive);
+const initialMinHeight = 2; // Define an initial minimum height for grid items
+const uid = new ShortUniqueId();
 const md = [
   { i: 'a', x: 0, y: 0, w: 4, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 4, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 4, h: initialMinHeight },
+];
 const sm = [
   { i: 'a', x: 0, y: 0, w: 6, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight },
+];
 const xs = [
   { i: 'a', x: 0, y: 0, w: 6, h: initialMinHeight },
-  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight }
-]
+  { i: 'b', x: 6, y: 0, w: 6, h: initialMinHeight },
+];
 const initialValue: Descendant[] = [
   {
     type: 'paragraph',
-    children: [{ text: '' }]
-  }
-]
+    children: [{ text: '' }],
+  },
+];
 
 const BlogTitleInput = styled(TextField)(({ theme }) => ({
   '& .MuiInputBase-input': {
@@ -69,77 +92,120 @@ const BlogTitleInput = styled(TextField)(({ theme }) => ({
     background: 'transparent',
     '&::placeholder': {
       fontSize: '28px',
-      color: theme.palette.text.primary
-    }
+      color: theme.palette.text.primary,
+    },
   },
   '& .MuiInputLabel-root': {
-    fontSize: '28px'
+    fontSize: '28px',
   },
   '& .MuiInputBase-root': {
     background: 'transparent',
     '&:hover': {
-      background: 'transparent'
+      background: 'transparent',
     },
     '&.Mui-focused': {
-      background: 'transparent'
-    }
+      background: 'transparent',
+    },
   },
   '& .MuiOutlinedInput-root': {
     '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.primary.main
+      borderColor: theme.palette.primary.main,
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.primary.main
-    }
-  }
-}))
+      borderColor: theme.palette.primary.main,
+    },
+  },
+}));
 
 interface CreatePostMinimalProps {
-  blogContentForEdit?: any
-  postIdForEdit?: string
-  blogMetadataForEdit?: any
-  switchType?: () => void
+  blogContentForEdit?: any;
+  postIdForEdit?: string;
+  blogMetadataForEdit?: any;
+  switchType?: () => void;
 }
 export const CreatePostMinimal = ({
   blogContentForEdit,
   postIdForEdit,
   blogMetadataForEdit,
-  switchType
+  switchType,
 }: CreatePostMinimalProps) => {
-  const navigate = useNavigate()
-  const { user } = useSelector((state: RootState) => state.auth)
-  const { currentBlog } = useSelector((state: RootState) => state.global)
-  const theme = useTheme()
-  const [editingSection, setEditingSection] = React.useState<any>(null)
+  const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { currentBlog } = useSelector((state: RootState) => state.global);
+  const theme = useTheme();
+  const [editingSection, setEditingSection] = React.useState<any>(null);
   const [layouts, setLayouts] = React.useState<any>({
-    rows: []
-  })
-  const [currentBreakpoint, setCurrentBreakpoint] = React.useState<any>()
+    rows: [],
+  });
+  // Normalize incoming layouts for Minimal editor
+  const toMinimalLayouts = (incoming: any) => {
+    if (incoming && typeof incoming === 'object' && Array.isArray(incoming.rows)) {
+      return incoming;
+    }
+    return { rows: [] };
+  };
 
-  const [newPostContent, setNewPostContent] = React.useState<any[]>([])
-  const [title, setTitle] = React.useState<string>('')
-  const [isOpenPostModal, setIsOpenPostModal] = React.useState<boolean>(false)
-  const [value, setValue] = React.useState(initialValue)
-  const [editorKey, setEditorKey] = React.useState(1)
-  const [count, setCount] = React.useState<number>(1)
-  const [isOpenAddTextModal, setIsOpenAddTextModal] =
-    React.useState<boolean>(false)
-  const [isOpenEditTextModal, setIsOpenEditTextModal] =
-    React.useState<boolean>(false)
+  const [currentBreakpoint, setCurrentBreakpoint] = React.useState<any>();
 
-  const [paddingValue, onChangePadding] = React.useState(5)
-  const dispatch = useDispatch()
+  const [newPostContent, setNewPostContent] = React.useState<any[]>([]);
+  const [title, setTitle] = React.useState<string>('');
+  const [isOpenPostModal, setIsOpenPostModal] = React.useState<boolean>(false);
+  const [value, setValue] = React.useState(initialValue);
+  const [editorKey, setEditorKey] = React.useState(1);
+  const [count, setCount] = React.useState<number>(1);
+  const [isOpenAddTextModal, setIsOpenAddTextModal] = React.useState<boolean>(false);
+  const [isOpenEditTextModal, setIsOpenEditTextModal] = React.useState<boolean>(false);
+
+  const [paddingValue, onChangePadding] = React.useState(5);
+  const [coverPickerOpen, setCoverPickerOpen] = React.useState(false);
+  const [coverTab, setCoverTab] = React.useState<'upload' | 'existing'>('upload');
+  const [pendingVideo, setPendingVideo] = React.useState<any | null>(null);
+  const [selectedPoster, setSelectedPoster] = React.useState<string>('');
+  const [existingImages, setExistingImages] = React.useState<any[]>([]);
+  const [existingImagesLoading, setExistingImagesLoading] = React.useState(false);
+  const [coverPickerMode, setCoverPickerMode] = React.useState<'add' | 'edit'>('add');
+  const [coverPickerTarget, setCoverPickerTarget] = React.useState<any | null>(null);
+  const dispatch = useDispatch();
+  const qdnResourceUrl = React.useCallback(
+    (service: string, name: string, identifier: string) =>
+      `/arbitrary/${service}/${name}/${identifier}`,
+    [],
+  );
+  const fetchExistingImages = React.useCallback(async () => {
+    if (!user?.name) return;
+    setExistingImagesLoading(true);
+    try {
+      const SERVICES = ['IMAGE', 'THUMBNAIL', 'QCHAT_IMAGE'];
+      const lists = await Promise.all(
+        SERVICES.map(async (svc) => {
+          const res = await fetch(
+            `/arbitrary/resources?service=${svc}&name=${user.name}&includemetadata=true&limit=100&offset=0&reverse=true`,
+          );
+          const data = await res.json();
+          return Array.isArray(data)
+            ? data.map((it: any) => ({ ...it, service: it.service || svc }))
+            : [];
+        }),
+      );
+      const merged = lists.flat();
+      setExistingImages(merged);
+    } catch (e) {
+      setExistingImages([]);
+    } finally {
+      setExistingImagesLoading(false);
+    }
+  }, [user]);
+
   const addPostSection = React.useCallback((content: any) => {
-    const id = uid()
-    const type = 'editor'
+    const id = uid();
+    const type = 'editor';
     const section = {
       type,
       version: 1,
       content,
-      id
-    }
-
-    setNewPostContent((prev) => [...prev, section])
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
     setLayouts((prev: any) => {
       return {
         ...prev,
@@ -148,155 +214,158 @@ export const CreatePostMinimal = ({
           {
             ids: [id],
             id: uid(),
-            type
-          }
-        ]
-      }
-    })
-    setEditorKey((prev) => prev + 1)
-  }, [])
+            type,
+          },
+        ],
+      };
+    });
+    setEditorKey((prev) => prev + 1);
+  }, []);
+
+  const addPollSection = React.useCallback((pollName: string) => {
+    const id = uid();
+    const type = 'poll';
+    const section = { type, version: 1, content: { pollName }, id };
+    setNewPostContent((prev) => [...prev, section]);
+    setLayouts((prev: any) => ({
+      ...prev,
+      rows: [...prev.rows, { ids: [id], id: uid(), type }],
+    }));
+  }, []);
 
   useEffect(() => {
-    if (blogContentForEdit && postIdForEdit && blogMetadataForEdit) {
-      setTitle(blogContentForEdit?.title || '')
+    if (blogContentForEdit && postIdForEdit) {
+      setTitle(blogContentForEdit?.title || '');
       setLayouts(
         blogContentForEdit?.layouts || {
-          rows: []
-        }
-      )
-      setNewPostContent(blogContentForEdit?.postContent || [])
-      onChangePadding(blogContentForEdit?.layoutGeneralSettings?.padding || 5)
+          rows: [],
+        },
+      );
+      setNewPostContent(blogContentForEdit?.postContent || []);
+      onChangePadding(blogContentForEdit?.layoutGeneralSettings?.padding ?? 5);
     }
-  }, [blogContentForEdit, postIdForEdit, blogMetadataForEdit])
+  }, [blogContentForEdit, postIdForEdit]);
 
   function objectToBase64(obj: any) {
     // Step 1: Convert the object to a JSON string
-    const jsonString = JSON.stringify(obj)
+    const jsonString = JSON.stringify(obj);
 
     // Step 2: Create a Blob from the JSON string
-    const blob = new Blob([jsonString], { type: 'application/json' })
+    const blob = new Blob([jsonString], { type: 'application/json' });
 
     // Step 3: Create a FileReader to read the Blob as a base64-encoded string
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
           // Remove 'data:application/json;base64,' prefix
-          const base64 = reader.result.replace(
-            'data:application/json;base64,',
-            ''
-          )
-          resolve(base64)
+          const base64 = reader.result.replace('data:application/json;base64,', '');
+          resolve(base64);
         } else {
-          reject(
-            new Error('Failed to read the Blob as a base64-encoded string')
-          )
+          reject(new Error('Failed to read the Blob as a base64-encoded string'));
         }
-      }
+      };
       reader.onerror = () => {
-        reject(reader.error)
-      }
-      reader.readAsDataURL(blob)
-    })
+        reject(reader.error);
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   const description = React.useMemo(() => {
-    let description = ''
-    const findText = newPostContent.find((data) => data?.type === 'editor')
+    let description = '';
+    const findText = newPostContent.find((data) => data?.type === 'editor');
     if (findText && findText.content) {
-      description = extractTextFromSlate(findText?.content)
-      description = description.slice(0, 180)
+      description = extractTextFromSlate(findText?.content);
+      description = description.slice(0, 180);
     }
-    return description
-  }, [newPostContent])
+    return description;
+  }, [newPostContent]);
   const post = React.useMemo(() => {
     return {
       description,
-      title
-    }
-  }, [title, description])
+      title,
+    };
+  }, [title, description]);
 
   async function publishQDNResource(params: any) {
-    let address
-    let name
-    let errorMsg = ''
+    let address;
+    let name;
+    let errorMsg = '';
 
-    address = user?.address
-    name = user?.name || ''
+    address = user?.address;
+    name = user?.name || '';
 
-    const missingFields = []
+    const missingFields = [];
     if (!address) {
-      errorMsg = "Cannot post: your address isn't available"
+      errorMsg = "Cannot post: your address isn't available";
     }
     if (!name) {
-      errorMsg = 'Cannot post without a name'
+      errorMsg = 'Cannot post without a name';
     }
-    if (!title) missingFields.push('title')
+    if (!title) missingFields.push('title');
     if (missingFields.length > 0) {
-      const missingFieldsString = missingFields.join(', ')
-      const errMsg = `Missing: ${missingFieldsString}`
-      errorMsg = errMsg
+      const missingFieldsString = missingFields.join(', ');
+      const errMsg = `Missing: ${missingFieldsString}`;
+      errorMsg = errMsg;
     }
-    if (newPostContent.length === 0) {
-      errorMsg = 'Your post has no content'
-    }
-
-    if (!currentBlog) {
-      errorMsg = 'Cannot publish without first creating a blog.'
-    }
+    // In edit mode, allow updating even if content array is empty (legacy/minimal posts)
 
     if (errorMsg) {
       dispatch(
         setNotification({
           msg: errorMsg,
-          alertType: 'error'
-        })
-      )
-      throw new Error(errorMsg)
+          alertType: 'error',
+        }),
+      );
+      throw new Error(errorMsg);
     }
 
     const layoutGeneralSettings = {
       padding: paddingValue ?? 0,
-      blogPostType: 'minimal'
-    }
+      blogPostType: 'minimal',
+    };
 
     const postObject = {
       title,
       createdAt: Date.now(),
       postContent: newPostContent,
       layouts,
-      layoutGeneralSettings
-    }
+      layoutGeneralSettings,
+    };
     try {
-      if (!currentBlog) return
-      const id = uid()
+      if (!currentBlog) return;
+      const id = uid();
       let createTitleId = title
         .replace(/[^a-zA-Z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim()
+        .trim();
 
       if (createTitleId.toLowerCase().includes('post')) {
-        createTitleId = createTitleId.replace(/post/gi, '')
+        createTitleId = createTitleId.replace(/post/gi, '');
       }
       if (createTitleId.toLowerCase().includes('q-blog')) {
-        createTitleId = createTitleId.replace(/q-blog/gi, '')
+        createTitleId = createTitleId.replace(/q-blog/gi, '');
       }
 
       if (createTitleId.endsWith('-')) {
-        createTitleId = createTitleId.slice(0, -1)
+        createTitleId = createTitleId.slice(0, -1);
       }
       if (createTitleId.startsWith('-')) {
-        createTitleId = createTitleId.slice(1)
+        createTitleId = createTitleId.slice(1);
       }
-      createTitleId = createTitleId.slice(0, 24)
-      const identifier = `${currentBlog.blogId}-post-${createTitleId}-${id}`
-      const blogPostToBase64 = await objectToBase64(postObject)
-      let description = ''
-      const findText = newPostContent.find((data) => data?.type === 'editor')
+      createTitleId = createTitleId.slice(0, 24);
+      const blogIdForPublish = computeBlogIdForPublish(currentBlog, blogMetadataForEdit);
+      const identifier = postIdForEdit
+        ? `${blogIdForPublish ?? ''}-post-${postIdForEdit}`
+        : `${blogIdForPublish ?? currentBlog?.blogId ?? ''}-post-${createTitleId}-${id}`;
+      const blogPostToBase64 = await objectToBase64(postObject);
+      let description = '';
+      const findText = newPostContent.find((data) => data?.type === 'editor');
       if (findText && findText.content) {
-        description = extractTextFromSlate(findText?.content)
-        description = description.slice(0, 180)
+        description = extractTextFromSlate(findText?.content);
+        description = description.slice(0, 180);
       }
 
       let requestBody: any = {
@@ -307,54 +376,48 @@ export const CreatePostMinimal = ({
         title: title,
         description: params?.description || description,
         category: params?.category || '',
-        identifier: identifier
-      }
+        identifier: identifier,
+      };
 
-      const formattedTags: { [key: string]: string } = {}
-      let tag4 = ''
-      let tag5 = ''
+      const formattedTags: { [key: string]: string } = {};
+      let tag4 = '';
+      let tag5 = '';
       if (params?.tags) {
         params.tags.slice(0, 3).forEach((tag: string, i: number) => {
-          formattedTags[`tag${i + 1}`] = tag
-        })
+          formattedTags[`tag${i + 1}`] = tag;
+        });
       }
 
-      const findVideo: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'video'
-      )
-      const findAudio: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'audio'
-      )
-      const findImage: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'image'
-      )
+      const findVideo: any = postObject?.postContent?.find((data: any) => data?.type === 'video');
+      const findAudio: any = postObject?.postContent?.find((data: any) => data?.type === 'audio');
+      const findImage: any = postObject?.postContent?.find((data: any) => data?.type === 'image');
 
-      const tag5Array = ['t']
-      if (findVideo) tag5Array.push('v')
-      if (findAudio) tag5Array.push('a')
+      const tag5Array = ['t'];
+      if (findVideo) tag5Array.push('v');
+      if (findAudio) tag5Array.push('a');
       if (findImage) {
-        tag5Array.push('i')
+        tag5Array.push('i');
         const imageElement = document.querySelector(
-          `[id="${findImage.id}"] img`
-        ) as HTMLImageElement | null
+          `[id="${findImage.id}"] img`,
+        ) as HTMLImageElement | null;
         if (imageElement) {
-          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`
+          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`;
         } else {
-          tag4 = 'v1.0x0'
+          tag4 = 'v1.0x0';
         }
       }
       if (!findImage) {
-        tag4 = 'v1.0x0'
+        tag4 = 'v1.0x0';
       }
-      tag5 = tag5Array.join(', ')
+      tag5 = tag5Array.join(', ');
       requestBody = {
         ...requestBody,
         ...formattedTags,
         tag4: tag4,
-        tag5: tag5
-      }
+        tag5: tag5,
+      };
 
-      const resourceResponse = await qortalRequest(requestBody)
+      const resourceResponse = await qortalRequest(requestBody);
 
       const postobj: any = {
         ...postObject,
@@ -364,111 +427,103 @@ export const CreatePostMinimal = ({
         tags: [...(params?.tags || []), tag4, tag5],
         id: identifier,
         user: name,
-        postImage: findImage ? findImage?.content?.image : ''
-      }
+        postImage: findImage ? findImage?.content?.image : '',
+      };
 
-      const withoutImage = { ...postobj }
-      delete withoutImage.postImage
-      dispatch(addPostToBeginning(withoutImage))
-      dispatch(addToHashMap(postobj))
+      const withoutImage = { ...postobj };
+      delete withoutImage.postImage;
+      dispatch(addPostToBeginning(withoutImage));
+      dispatch(addToHashMap(postobj));
       dispatch(
         setNotification({
           msg: 'Blog post successfully published',
-          alertType: 'success'
-        })
-      )
-      const str = identifier
-      const arr = str.split('-post-')
-      const str1 = arr[0]
-      const str2 = arr[1]
-      const blogId = removePrefix(str1)
-      navigate(`/${name}/${blogId}/${str2}`)
+          alertType: 'success',
+        }),
+      );
+      const str = identifier;
+      const arr = str.split('-post-');
+      const str1 = arr[0];
+      const str2 = arr[1];
+      const blogId = removePrefix(str1);
+      navigate(`/${name}/${blogId}/${str2}`);
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
           msg: error?.message || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
 
-      throw new Error('Failed to publish post')
+      throw new Error('Failed to publish post');
     }
   }
   async function updateQDNResource(params: any) {
-    if (!blogContentForEdit || !postIdForEdit || !blogMetadataForEdit) return
-    let address
-    let name
-    let errorMsg = ''
+    if (!blogContentForEdit || !postIdForEdit) return;
+    let address;
+    let name;
+    let errorMsg = '';
 
-    address = user?.address
-    name = user?.name || ''
+    address = user?.address;
+    name = user?.name || '';
 
-    const missingFields = []
+    const missingFields = [];
     if (!address) {
-      errorMsg = "Cannot post: your address isn't available"
+      errorMsg = "Cannot post: your address isn't available";
     }
     if (!name) {
-      errorMsg = 'Cannot post without a name'
+      errorMsg = 'Cannot post without a name';
     }
-    if (!title) missingFields.push('title')
+    if (!title) missingFields.push('title');
     if (missingFields.length > 0) {
-      const missingFieldsString = missingFields.join(', ')
-      const errMsg = `Missing: ${missingFieldsString}`
-      errorMsg = errMsg
+      const missingFieldsString = missingFields.join(', ');
+      const errMsg = `Missing: ${missingFieldsString}`;
+      errorMsg = errMsg;
     }
-    if (newPostContent.length === 0) {
-      errorMsg = 'Your post has no content'
-    }
-
-    if (!currentBlog) {
-      errorMsg = 'Cannot publish without first creating a blog.'
-    }
+    // In edit mode, allow updating even if content array is empty (legacy/minimal posts)
 
     if (errorMsg) {
       dispatch(
         setNotification({
           msg: errorMsg,
-          alertType: 'error'
-        })
-      )
-      throw new Error(errorMsg)
+          alertType: 'error',
+        }),
+      );
+      throw new Error(errorMsg);
     }
 
     const layoutGeneralSettings = {
       padding: paddingValue ?? 0,
-      blogPostType: 'minimal'
-    }
+      blogPostType: 'minimal',
+    };
 
     const postObject = {
       ...blogContentForEdit,
       title,
       postContent: newPostContent,
       layouts,
-      layoutGeneralSettings
-    }
+      layoutGeneralSettings,
+    };
     try {
-      if (!currentBlog) return
-
-      const identifier = postIdForEdit
-      const blogPostToBase64 = await objectToBase64(postObject)
-      let description = ''
-      const findText = newPostContent.find((data) => data?.type === 'editor')
+      const identifier = postIdForEdit;
+      const blogPostToBase64 = await objectToBase64(postObject);
+      let description = '';
+      const findText = newPostContent.find((data) => data?.type === 'editor');
       if (findText && findText.content) {
-        description = extractTextFromSlate(findText?.content)
-        description = description.slice(0, 180)
+        description = extractTextFromSlate(findText?.content);
+        description = description.slice(0, 180);
       }
 
       let requestBody: any = {
@@ -479,54 +534,48 @@ export const CreatePostMinimal = ({
         title: title,
         description: params?.description || description,
         category: params?.category || '',
-        identifier: identifier
-      }
+        identifier: identifier,
+      };
 
-      const formattedTags: { [key: string]: string } = {}
-      let tag4 = ''
-      let tag5 = ''
+      const formattedTags: { [key: string]: string } = {};
+      let tag4 = '';
+      let tag5 = '';
       if (params?.tags) {
         params.tags.slice(0, 3).forEach((tag: string, i: number) => {
-          formattedTags[`tag${i + 1}`] = tag
-        })
+          formattedTags[`tag${i + 1}`] = tag;
+        });
       }
 
-      const findVideo: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'video'
-      )
-      const findAudio: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'audio'
-      )
-      const findImage: any = postObject?.postContent?.find(
-        (data: any) => data?.type === 'image'
-      )
+      const findVideo: any = postObject?.postContent?.find((data: any) => data?.type === 'video');
+      const findAudio: any = postObject?.postContent?.find((data: any) => data?.type === 'audio');
+      const findImage: any = postObject?.postContent?.find((data: any) => data?.type === 'image');
 
-      const tag5Array = ['t']
-      if (findVideo) tag5Array.push('v')
-      if (findAudio) tag5Array.push('a')
+      const tag5Array = ['t'];
+      if (findVideo) tag5Array.push('v');
+      if (findAudio) tag5Array.push('a');
       if (findImage) {
-        tag5Array.push('i')
+        tag5Array.push('i');
         const imageElement = document.querySelector(
-          `[id="${findImage.id}"] img`
-        ) as HTMLImageElement | null
+          `[id="${findImage.id}"] img`,
+        ) as HTMLImageElement | null;
         if (imageElement) {
-          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`
+          tag4 = `v1.${imageElement?.width}x${imageElement?.height}`;
         } else {
-          tag4 = 'v1.0x0'
+          tag4 = 'v1.0x0';
         }
       }
       if (!findImage) {
-        tag4 = 'v1.0x0'
+        tag4 = 'v1.0x0';
       }
-      tag5 = tag5Array.join(', ')
+      tag5 = tag5Array.join(', ');
       requestBody = {
         ...requestBody,
         ...formattedTags,
         tag4: tag4,
-        tag5: tag5
-      }
+        tag5: tag5,
+      };
 
-      const resourceResponse = await qortalRequest(requestBody)
+      const resourceResponse = await qortalRequest(requestBody);
 
       const postobj = {
         ...postObject,
@@ -535,55 +584,55 @@ export const CreatePostMinimal = ({
         category: params?.category || '',
         tags: [...(params?.tags || []), tag4, tag5],
         user: name,
-        id: identifier
-      }
-      const withoutImage = { ...postobj }
-      delete withoutImage.postImage
-      dispatch(updatePost(withoutImage))
-      dispatch(updateInHashMap(postobj))
+        id: identifier,
+      };
+      const withoutImage = { ...postobj };
+      delete withoutImage.postImage;
+      dispatch(updatePost(withoutImage));
+      dispatch(updateInHashMap(postobj));
       dispatch(
         setNotification({
           msg: 'Blog post successfully updated',
-          alertType: 'success'
-        })
-      )
+          alertType: 'success',
+        }),
+      );
     } catch (error: any) {
-      let notificationObj = null
+      let notificationObj = null;
       if (typeof error === 'string') {
         notificationObj = {
           msg: error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else if (typeof error?.error === 'string') {
         notificationObj = {
           msg: error?.error || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       } else {
         notificationObj = {
           msg: error?.message || 'Failed to publish post',
-          alertType: 'error'
-        }
+          alertType: 'error',
+        };
       }
-      if (!notificationObj) return
-      dispatch(setNotification(notificationObj))
+      if (!notificationObj) return;
+      dispatch(setNotification(notificationObj));
 
-      throw new Error('Failed to update post')
+      throw new Error('Failed to update post');
     }
   }
   const addImage = (base64: string) => {
-    const id = uid()
-    const type = 'image'
+    const id = uid();
+    const type = 'image';
     const section = {
       type,
       version: 1,
       content: {
         image: base64,
-        caption: ''
+        caption: '',
       },
-      id
-    }
-    setNewPostContent((prev) => [...prev, section])
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
     setLayouts((prev: any) => {
       return {
         ...prev,
@@ -592,124 +641,25 @@ export const CreatePostMinimal = ({
           {
             ids: [id],
             id: uid(),
-            type
-          }
-        ]
-      }
-    })
-  }
+            type,
+          },
+        ],
+      };
+    });
+  };
 
   interface IaddVideo {
-    name: string
-    identifier: string
-    service: string
-    title: string
-    description: string
-    mimeType?: string
+    name: string;
+    identifier: string;
+    service: string;
+    title: string;
+    description: string;
+    mimeType?: string;
+    poster?: string;
   }
-  const addVideo = ({
-    name,
-    identifier,
-    service,
-    title,
-    description
-  }: IaddVideo) => {
-    const id = uid()
-    const type = 'video'
-    const section = {
-      type,
-      version: 1,
-      content: {
-        name: name,
-        identifier: identifier,
-        service: service,
-        title,
-        description
-      },
-      id
-    }
-    setNewPostContent((prev) => [...prev, section])
-    setLayouts((prev: any) => {
-      return {
-        ...prev,
-        rows: [
-          ...prev.rows,
-          {
-            ids: [id],
-            id: uid(),
-            type
-          }
-        ]
-      }
-    })
-  }
-
-  const removeFromLayouts = (rowIndex: number, id: string) => {
-    setLayouts((prev: any) => {
-      const copyRows = [...prev.rows]
-      const copyRow = copyRows[rowIndex]
-      const indexToRemove = copyRow.ids.indexOf(id)
-
-      // Remove the element using splice()
-      if (indexToRemove !== -1) {
-        copyRow.ids.splice(indexToRemove, 1)
-      }
-      if (copyRow.ids.length === 0) {
-        copyRows.splice(rowIndex, 1)
-      }
-      return {
-        ...prev,
-        rows: copyRows
-      }
-    })
-  }
-
-  const addAudio = ({
-    name,
-    identifier,
-    service,
-    title,
-    description
-  }: IaddVideo) => {
-    const id = uid()
-    const type = 'audio'
-    const section = {
-      type,
-      version: 1,
-      content: {
-        name: name,
-        identifier: identifier,
-        service: service,
-        title,
-        description
-      },
-      id
-    }
-    setNewPostContent((prev) => [...prev, section])
-    setLayouts((prev: any) => {
-      return {
-        ...prev,
-        rows: [
-          ...prev.rows,
-          {
-            ids: [id],
-            id: uid(),
-            type
-          }
-        ]
-      }
-    })
-  }
-  const addFile = ({
-    name,
-    identifier,
-    service,
-    title,
-    description,
-    mimeType
-  }: IaddVideo) => {
-    const id = uid()
-    const type = 'file'
+  const addVideo = ({ name, identifier, service, title, description, poster }: IaddVideo) => {
+    const id = uid();
+    const type = 'video';
     const section = {
       type,
       version: 1,
@@ -719,11 +669,11 @@ export const CreatePostMinimal = ({
         service: service,
         title,
         description,
-        mimeType
+        ...(poster ? { poster } : {}),
       },
-      id
-    }
-    setNewPostContent((prev) => [...prev, section])
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
     setLayouts((prev: any) => {
       return {
         ...prev,
@@ -732,68 +682,154 @@ export const CreatePostMinimal = ({
           {
             ids: [id],
             id: uid(),
-            type
-          }
-        ]
+            type,
+          },
+        ],
+      };
+    });
+  };
+
+  const removeFromLayouts = (rowIndex: number, id: string) => {
+    setLayouts((prev: any) => {
+      const copyRows = [...prev.rows];
+      const copyRow = copyRows[rowIndex];
+      const indexToRemove = copyRow.ids.indexOf(id);
+
+      // Remove the element using splice()
+      if (indexToRemove !== -1) {
+        copyRow.ids.splice(indexToRemove, 1);
       }
-    })
-  }
+      if (copyRow.ids.length === 0) {
+        copyRows.splice(rowIndex, 1);
+      }
+      return {
+        ...prev,
+        rows: copyRows,
+      };
+    });
+  };
+
+  const addAudio = ({ name, identifier, service, title, description }: IaddVideo) => {
+    const id = uid();
+    const type = 'audio';
+    const section = {
+      type,
+      version: 1,
+      content: {
+        name: name,
+        identifier: identifier,
+        service: service,
+        title,
+        description,
+      },
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
+    setLayouts((prev: any) => {
+      return {
+        ...prev,
+        rows: [
+          ...prev.rows,
+          {
+            ids: [id],
+            id: uid(),
+            type,
+          },
+        ],
+      };
+    });
+  };
+  const addFile = ({ name, identifier, service, title, description, mimeType }: IaddVideo) => {
+    const id = uid();
+    const type = 'file';
+    const section = {
+      type,
+      version: 1,
+      content: {
+        name: name,
+        identifier: identifier,
+        service: service,
+        title,
+        description,
+        mimeType,
+      },
+      id,
+    };
+    setNewPostContent((prev) => [...prev, section]);
+    setLayouts((prev: any) => {
+      return {
+        ...prev,
+        rows: [
+          ...prev.rows,
+          {
+            ids: [id],
+            id: uid(),
+            type,
+          },
+        ],
+      };
+    });
+  };
   const addSection = () => {
-    setValue(initialValue)
-    addPostSection(value)
-  }
+    setValue(initialValue);
+    addPostSection(value);
+  };
 
   const removeSection = (section: any, rowIndex: number) => {
-    const newContent = newPostContent.filter((s) => s.id !== section.id)
-    setNewPostContent(newContent)
-    removeFromLayouts(rowIndex, section.id)
-  }
+    const newContent = newPostContent.filter((s) => s.id !== section.id);
+    setNewPostContent(newContent);
+    removeFromLayouts(rowIndex, section.id);
+  };
   const editImage = (base64: string, section: any) => {
     const newSection = {
       ...section,
       content: {
         image: base64,
-        caption: section.content.caption
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+        caption: section.content.caption,
+      },
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
   const editVideo = (
-    { name, identifier, service, description, title }: IaddVideo,
-    section: any
+    { name, identifier, service, description, title, poster }: IaddVideo,
+    section: any,
   ) => {
+    const nextContent: any = {
+      name,
+      identifier,
+      service,
+      description,
+      title,
+    };
+    if (poster === undefined) {
+      if (typeof section.content?.poster !== 'undefined') {
+        nextContent.poster = section.content.poster;
+      }
+    } else if (poster) {
+      nextContent.poster = poster;
+    }
     const newSection = {
       ...section,
-      content: {
-        name: name,
-        identifier: identifier,
-        service: service,
-        description,
-        title
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+      content: nextContent,
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
 
   const editAudio = (
     { name, identifier, service, description, title }: IaddVideo,
-    section: any
+    section: any,
   ) => {
     const newSection = {
       ...section,
@@ -802,57 +838,56 @@ export const CreatePostMinimal = ({
         identifier: identifier,
         service: service,
         description,
-        title
-      }
-    }
-    const findSectionIndex = newPostContent.findIndex(
-      (s) => s.id === section.id
-    )
+        title,
+      },
+    };
+    const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
     if (findSectionIndex !== -1) {
-      const copyNewPostContent = [...newPostContent]
-      copyNewPostContent[findSectionIndex] = newSection
+      const copyNewPostContent = [...newPostContent];
+      copyNewPostContent[findSectionIndex] = newSection;
 
-      setNewPostContent(copyNewPostContent)
+      setNewPostContent(copyNewPostContent);
     }
-  }
+  };
 
   const editSection = (section: any) => {
-    setIsOpenEditTextModal(true)
-    setEditingSection(section)
-    setValue(section.content)
-  }
+    setIsOpenEditTextModal(true);
+    setEditingSection(section);
+    setValue(section.content);
+  };
 
   const editPostSection = React.useCallback(
     (content: any, section: any) => {
-      const findSectionIndex = newPostContent.findIndex(
-        (s) => s.id === section.id
-      )
+      const findSectionIndex = newPostContent.findIndex((s) => s.id === section.id);
 
       if (findSectionIndex !== -1) {
-        const copyNewPostContent = [...newPostContent]
+        const copyNewPostContent = [...newPostContent];
         copyNewPostContent[findSectionIndex] = {
           ...section,
-          content
-        }
+          content,
+        };
 
-        setNewPostContent(copyNewPostContent)
+        setNewPostContent(copyNewPostContent);
       }
 
-      setEditingSection(null)
-      setIsOpenEditTextModal(false)
+      setEditingSection(null);
+      setIsOpenEditTextModal(false);
     },
-    [newPostContent]
-  )
+    [newPostContent],
+  );
 
-  const onSelectVideo = React.useCallback((video: any) => {
-    addVideo({
-      name: video.name,
-      identifier: video.identifier,
-      service: video.service,
-      title: video?.metadata?.title,
-      description: video?.metadata?.description
-    })
-  }, [])
+  const onSelectVideo = React.useCallback(
+    (video: any) => {
+      setCoverPickerMode('add');
+      setCoverPickerTarget(null);
+      setPendingVideo(video);
+      setSelectedPoster('');
+      setCoverTab('upload');
+      setCoverPickerOpen(true);
+      fetchExistingImages();
+    },
+    [fetchExistingImages],
+  );
 
   const onSelectAudio = React.useCallback((video: any) => {
     addAudio({
@@ -860,9 +895,9 @@ export const CreatePostMinimal = ({
       identifier: video.identifier,
       service: video.service,
       title: video?.metadata?.title,
-      description: video?.metadata?.description
-    })
-  }, [])
+      description: video?.metadata?.description,
+    });
+  }, []);
   const onSelectFile = React.useCallback((video: any) => {
     addFile({
       name: video.name,
@@ -870,67 +905,67 @@ export const CreatePostMinimal = ({
       service: video.service,
       title: video?.metadata?.title,
       description: video?.metadata?.description,
-      mimeType: video?.metadata?.mimeType
-    })
-  }, [])
+      mimeType: video?.metadata?.mimeType,
+    });
+  }, []);
+
+  const onSelectPoll = React.useCallback((pollName: string) => {
+    const section = { type: 'poll', version: 1, content: { pollName }, id: uid() };
+    setNewPostContent((prev) => [...prev, section]);
+  }, []);
 
   const closeAddTextModal = React.useCallback(() => {
-    setIsOpenAddTextModal(false)
-  }, [])
+    setIsOpenAddTextModal(false);
+  }, []);
   const closeEditTextModal = React.useCallback(() => {
-    setIsOpenEditTextModal(false)
-    setEditingSection(null)
-  }, [])
+    setIsOpenEditTextModal(false);
+    setEditingSection(null);
+  }, []);
 
   const handleResize = () => {
-    setCount((prev) => prev + 1)
-  }
+    setCount((prev) => prev + 1);
+  };
 
   React.useEffect(() => {
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
-  const addImageToRow = (
-    row: any,
-    rowIndex: number,
-    position: string,
-    base64: string
-  ) => {
-    const newId = uid()
-    const type = 'image'
+  const addImageToRow = (row: any, rowIndex: number, position: string, base64: string) => {
+    const newId = uid();
+    const type = 'image';
     setLayouts((prev: any) => {
-      const { id } = row
-      if (!id) return prev
-      const copyRows: any = [...prev.rows]
-      const copyRow: any = copyRows[rowIndex]
+      const { id } = row;
+      if (!id) return prev;
+      const copyRows: any = [...prev.rows];
+      const copyRow: any = copyRows[rowIndex];
       if (position === 'left') {
-        copyRow.ids = [newId, ...copyRow.ids]
+        copyRow.ids = [newId, ...copyRow.ids];
       }
       if (position === 'right') {
-        copyRow.ids = [...copyRow.ids, newId]
+        copyRow.ids = [...copyRow.ids, newId];
       }
-      copyRows[rowIndex] = copyRow
+      copyRows[rowIndex] = copyRow;
       return {
         ...prev,
-        rows: copyRows
-      }
-    })
+        rows: copyRows,
+      };
+    });
 
     const section = {
       type,
       version: 1,
       content: {
         image: base64,
-        caption: ''
+        caption: '',
       },
-      id: newId
-    }
-    setNewPostContent((prev) => [...prev, section])
-  }
+      id: newId,
+    };
+    setNewPostContent((prev) => [...prev, section]);
+  };
 
   return (
     <>
@@ -940,6 +975,7 @@ export const CreatePostMinimal = ({
         onSelectVideo={onSelectVideo}
         onSelectAudio={onSelectAudio}
         onSelectFile={onSelectFile}
+        onSelectPoll={addPollSection} // OR onSelectPoll
         paddingValue={paddingValue}
         onChangePadding={onChangePadding}
         isMinimal={true}
@@ -951,7 +987,7 @@ export const CreatePostMinimal = ({
           display: 'flex',
           alignItems: 'center',
           flexDirection: 'column',
-          padding: '10px'
+          padding: '10px',
         }}
       >
         <BlogTitleInput
@@ -973,11 +1009,11 @@ export const CreatePostMinimal = ({
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
         >
           {layouts.rows.map((row: any, rowIndex: number) => {
-            const { type } = row
+            const { type } = row;
             return (
               <Box
                 sx={{
@@ -987,29 +1023,25 @@ export const CreatePostMinimal = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginTop: '25px',
-                  gap: 2
+                  gap: 2,
                 }}
               >
                 {row.type === 'image' && row.ids.length < 3 && (
                   <Box
                     sx={{
-                      marginRight: '20px'
+                      marginRight: '20px',
                     }}
                   >
-                    <ImageUploader
-                      onPick={(base64) =>
-                        addImageToRow(row, rowIndex, 'left', base64)
-                      }
-                    >
-                      <AddPhotoAlternateIcon />
-                    </ImageUploader>
+                    <ImagePanel
+                      width="24px"
+                      height="24px"
+                      onSelect={(src) => addImageToRow(row, rowIndex, 'left', src)}
+                    />
                   </Box>
                 )}
                 {row.ids.map((elementId: string) => {
-                  const section = newPostContent.find(
-                    (el) => el.id === elementId
-                  )
-                  if (!section) return null
+                  const section = newPostContent.find((el) => el.id === elementId);
+                  if (!section) return null;
                   if (section.type === 'editor') {
                     return (
                       <div
@@ -1019,7 +1051,7 @@ export const CreatePostMinimal = ({
                           maxWidth: '800px',
                           display: 'flex',
                           flexDirection: 'column',
-                          width: '100%'
+                          width: '100%',
                         }}
                       >
                         <DynamicHeightItemMinimal
@@ -1030,28 +1062,22 @@ export const CreatePostMinimal = ({
                           count={count}
                           padding={paddingValue}
                         >
-                          {editingSection &&
-                          editingSection.id === section.id ? null : (
+                          {editingSection && editingSection.id === section.id ? null : (
                             <Box
                               sx={{
                                 position: 'relative',
                                 width: '100%',
-                                height: 'auto'
+                                height: 'auto',
                               }}
                             >
-                              <ReadOnlySlate
-                                key={section.id}
-                                content={section.content}
-                              />
+                              <ReadOnlySlate key={section.id} content={section.content} />
                               <EditButtons>
                                 <DeleteIcon
-                                  onClick={() =>
-                                    removeSection(section, rowIndex)
-                                  }
+                                  onClick={() => removeSection(section, rowIndex)}
                                   sx={{
                                     cursor: 'pointer',
                                     height: '18px',
-                                    width: 'auto'
+                                    width: 'auto',
                                   }}
                                 />
                                 <EditIcon
@@ -1059,7 +1085,7 @@ export const CreatePostMinimal = ({
                                   sx={{
                                     cursor: 'pointer',
                                     height: '18px',
-                                    width: 'auto'
+                                    width: 'auto',
                                   }}
                                 />
                               </EditButtons>
@@ -1067,15 +1093,11 @@ export const CreatePostMinimal = ({
                           )}
                         </DynamicHeightItemMinimal>
                       </div>
-                    )
+                    );
                   }
                   if (section.type === 'image') {
                     return (
-                      <div
-                        id={section.id}
-                        key={section.id}
-                        className="grid-item"
-                      >
+                      <div id={section.id} key={section.id} className="grid-item">
                         <DynamicHeightItemMinimal
                           layouts={layouts}
                           setLayouts={setLayouts}
@@ -1089,7 +1111,7 @@ export const CreatePostMinimal = ({
                             sx={{
                               position: 'relative',
                               width: '100%',
-                              height: '100%'
+                              height: '100%',
                             }}
                           >
                             <img
@@ -1097,7 +1119,7 @@ export const CreatePostMinimal = ({
                               className="post-image"
                               style={{
                                 objectFit: 'contain',
-                                maxHeight: '50vh'
+                                maxHeight: '50vh',
                               }}
                             />
                             <EditButtons>
@@ -1106,25 +1128,19 @@ export const CreatePostMinimal = ({
                                 sx={{
                                   cursor: 'pointer',
                                   height: '18px',
-                                  width: 'auto'
+                                  width: 'auto',
                                 }}
                               />
-                              <ImageUploader
-                                onPick={(base64) => editImage(base64, section)}
-                              >
-                                <EditIcon
-                                  sx={{
-                                    cursor: 'pointer',
-                                    height: '18px',
-                                    width: 'auto'
-                                  }}
-                                />
-                              </ImageUploader>
+                              <ImagePanel
+                                width="18px"
+                                height="18px"
+                                onSelect={(src) => editImage(src, section)}
+                              />
                             </EditButtons>
                           </Box>
                         </DynamicHeightItemMinimal>
                       </div>
-                    )
+                    );
                   }
 
                   if (section.type === 'video') {
@@ -1142,16 +1158,17 @@ export const CreatePostMinimal = ({
                             sx={{
                               position: 'relative',
                               width: '100%',
-                              height: '100%'
+                              height: '100%',
                             }}
                           >
                             <VideoPlayer
                               name={section.content.name}
                               service={section.content.service}
                               identifier={section.content.identifier}
+                              poster={section.content.poster}
                               from="create"
                               customStyle={{
-                                height: '50vh'
+                                height: '50vh',
                               }}
                             />
                             <EditButtons>
@@ -1160,7 +1177,7 @@ export const CreatePostMinimal = ({
                                 sx={{
                                   cursor: 'pointer',
                                   height: '18px',
-                                  width: 'auto'
+                                  width: 'auto',
                                 }}
                               />
                               <VideoPanel
@@ -1173,17 +1190,29 @@ export const CreatePostMinimal = ({
                                       identifier: video.identifier,
                                       service: video.service,
                                       title: video?.metadata?.title,
-                                      description: video?.metadata?.description
+                                      description: video?.metadata?.description,
                                     },
-                                    section
+                                    section,
                                   )
                                 }
+                              />
+                              <AddPhotoAlternateIcon
+                                onClick={() => {
+                                  setCoverPickerMode('edit');
+                                  setCoverPickerTarget(section);
+                                  setPendingVideo(null);
+                                  setSelectedPoster(section.content?.poster || '');
+                                  setCoverTab('upload');
+                                  setCoverPickerOpen(true);
+                                  fetchExistingImages();
+                                }}
+                                sx={{ cursor: 'pointer', height: '18px', width: 'auto' }}
                               />
                             </EditButtons>
                           </Box>
                         </DynamicHeightItemMinimal>
                       </div>
-                    )
+                    );
                   }
                   if (section.type === 'audio') {
                     return (
@@ -1200,7 +1229,7 @@ export const CreatePostMinimal = ({
                             sx={{
                               position: 'relative',
                               width: '100%',
-                              height: '100%'
+                              height: '100%',
                             }}
                           >
                             <AudioElement
@@ -1216,7 +1245,7 @@ export const CreatePostMinimal = ({
                                 sx={{
                                   cursor: 'pointer',
                                   height: '18px',
-                                  width: 'auto'
+                                  width: 'auto',
                                 }}
                               />
                               <AudioPanel
@@ -1229,9 +1258,9 @@ export const CreatePostMinimal = ({
                                       identifier: audio.identifier,
                                       service: audio.service,
                                       title: audio?.metadata?.title,
-                                      description: audio?.metadata?.description
+                                      description: audio?.metadata?.description,
                                     },
-                                    section
+                                    section,
                                   )
                                 }
                               />
@@ -1239,7 +1268,7 @@ export const CreatePostMinimal = ({
                           </Box>
                         </DynamicHeightItemMinimal>
                       </div>
-                    )
+                    );
                   }
                   if (section.type === 'file') {
                     return (
@@ -1256,7 +1285,7 @@ export const CreatePostMinimal = ({
                             sx={{
                               position: 'relative',
                               width: '100%',
-                              height: '100%'
+                              height: '100%',
                             }}
                           >
                             <FileElement
@@ -1275,33 +1304,61 @@ export const CreatePostMinimal = ({
                                 sx={{
                                   cursor: 'pointer',
                                   height: '18px',
-                                  width: 'auto'
+                                  width: 'auto',
                                 }}
                               />
                             </EditButtons>
                           </Box>
                         </DynamicHeightItemMinimal>
                       </div>
-                    )
+                    );
+                  }
+                  if (section.type === 'poll') {
+                    return (
+                      <div key={section.id} className="grid-item">
+                        <DynamicHeightItemMinimal
+                          layouts={layouts}
+                          setLayouts={setLayouts}
+                          i={section.id}
+                          breakpoint={currentBreakpoint}
+                          count={count}
+                          padding={paddingValue}
+                        >
+                          <Box sx={{ position: 'relative', width: '100%' }}>
+                            {/* lightweight preview */}
+                            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                              Poll: {section.content?.pollName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              The interactive poll will appear in the published post.
+                            </Typography>
+                            <EditButtons>
+                              <DeleteIcon
+                                onClick={() => removeSection(section, rowIndex)}
+                                sx={{ cursor: 'pointer', height: '18px', width: 'auto' }}
+                              />
+                            </EditButtons>
+                          </Box>
+                        </DynamicHeightItemMinimal>
+                      </div>
+                    );
                   }
                 })}
                 {row.type === 'image' && row.ids.length < 3 && (
                   <Box
                     sx={{
-                      marginLeft: '20px'
+                      marginLeft: '20px',
                     }}
                   >
-                    <ImageUploader
-                      onPick={(base64) =>
-                        addImageToRow(row, rowIndex, 'right', base64)
-                      }
-                    >
-                      <AddPhotoAlternateIcon />
-                    </ImageUploader>
+                    <ImagePanel
+                      width="24px"
+                      height="24px"
+                      onSelect={(src) => addImageToRow(row, rowIndex, 'right', src)}
+                    />
                   </Box>
                 )}
               </Box>
-            )
+            );
           })}
 
           <Box
@@ -1312,12 +1369,13 @@ export const CreatePostMinimal = ({
               zIndex: 15,
               background: 'deepskyblue',
               padding: '10px',
-              borderRadius: '5px'
+              borderRadius: '5px',
             }}
           >
             <Button
               onClick={() => {
-                setIsOpenPostModal(true)
+                if (!title && blogContentForEdit?.title) setTitle(blogContentForEdit.title);
+                setIsOpenPostModal(true);
               }}
             >
               Publish
@@ -1329,7 +1387,7 @@ export const CreatePostMinimal = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
             }}
           >
             <BlogEditor
@@ -1347,44 +1405,154 @@ export const CreatePostMinimal = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
             }}
           >
-            <BlogEditor
-              value={value}
-              setValue={setValue}
-              editorKey={editorKey}
-            />
+            <BlogEditor value={value} setValue={setValue} editorKey={editorKey} />
           </Box>
           <BuilderButton onClick={() => editPostSection(value, editingSection)}>
             Update Text
           </BuilderButton>
           <BuilderButton onClick={closeEditTextModal}>Close</BuilderButton>
         </ReusableModal>
-        {!blogContentForEdit && (
-          <PostPublishModal
-            onClose={() => {
-              setIsOpenPostModal(false)
-            }}
-            open={isOpenPostModal}
-            post={post}
-            onPublish={publishQDNResource}
-          />
-        )}
-
-        {blogContentForEdit && blogMetadataForEdit?.metadata && (
-          <PostPublishModal
-            onClose={() => {
-              setIsOpenPostModal(false)
-            }}
-            open={isOpenPostModal}
-            post={post}
-            onPublish={updateQDNResource}
-            mode="edit"
-            metadata={blogMetadataForEdit?.metadata}
-          />
-        )}
+        <PostPublishModal
+          onClose={() => {
+            setIsOpenPostModal(false);
+          }}
+          open={isOpenPostModal}
+          post={post}
+          onPublish={postIdForEdit ? updateQDNResource : publishQDNResource}
+          mode={postIdForEdit ? 'edit' : undefined}
+          metadata={postIdForEdit ? blogMetadataForEdit?.metadata : undefined}
+        />
       </Box>
+      <Dialog
+        open={coverPickerOpen}
+        onClose={() => setCoverPickerOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Select a cover image</DialogTitle>
+        <DialogContent>
+          <Tabs value={coverTab} onChange={(_, v) => setCoverTab(v)}>
+            <Tab value="upload" label="New" />
+            <Tab value="existing" label="Existing" />
+          </Tabs>
+          {coverTab === 'upload' ? (
+            <Box sx={{ mt: 2 }}>
+              <ImageUploader onPick={(base64) => setSelectedPoster(base64)}>
+                <Button variant="contained">Choose image</Button>
+              </ImageUploader>
+              {selectedPoster && (
+                <Box sx={{ mt: 2 }}>
+                  <img
+                    src={selectedPoster}
+                    style={{ maxWidth: '100%', maxHeight: 240, objectFit: 'contain' }}
+                  />
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+              {existingImages.map((img: any) => {
+                const service = img.service || 'IMAGE';
+                const url = qdnResourceUrl(service, img.name, img.identifier);
+                const isSelected = selectedPoster === url;
+                return (
+                  <Box
+                    key={`${service}:${img.name}:${img.identifier}`}
+                    onClick={() => setSelectedPoster(url)}
+                    sx={{
+                      border: isSelected ? '2px solid #1976d2' : '1px solid rgba(0,0,0,0.2)',
+                      borderRadius: 1,
+                      p: 0.5,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <img src={url} style={{ width: '100%', height: 100, objectFit: 'cover' }} />
+                    <Typography
+                      variant="caption"
+                      noWrap
+                      title={img?.metadata?.title || img.identifier}
+                    >
+                      {img?.metadata?.title || img.identifier}
+                    </Typography>
+                  </Box>
+                );
+              })}
+              {existingImagesLoading && <Typography variant="body2">Loading...</Typography>}
+              {!existingImagesLoading && !existingImages.length && (
+                <Typography variant="body2">No published images found.</Typography>
+              )}
+            </Box>
+          )}
+          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button variant="outlined" color="error" onClick={() => setCoverPickerOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                if (coverPickerMode === 'edit' && coverPickerTarget) {
+                  editVideo(
+                    {
+                      name: coverPickerTarget.content.name,
+                      identifier: coverPickerTarget.content.identifier,
+                      service: coverPickerTarget.content.service,
+                      title: coverPickerTarget.content.title,
+                      description: coverPickerTarget.content.description,
+                      poster: '',
+                    },
+                    coverPickerTarget,
+                  );
+                  setSelectedPoster('');
+                  setCoverPickerOpen(false);
+                } else {
+                  setSelectedPoster('');
+                }
+              }}
+            >
+              Clear cover
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={coverPickerMode === 'add' && !pendingVideo}
+              onClick={() => {
+                const poster = selectedPoster || undefined;
+                if (coverPickerMode === 'add' && pendingVideo) {
+                  addVideo({
+                    name: pendingVideo.name,
+                    identifier: pendingVideo.identifier,
+                    service: pendingVideo.service,
+                    title: pendingVideo?.metadata?.title,
+                    description: pendingVideo?.metadata?.description,
+                    poster,
+                  });
+                } else if (coverPickerMode === 'edit' && coverPickerTarget) {
+                  editVideo(
+                    {
+                      name: coverPickerTarget.content.name,
+                      identifier: coverPickerTarget.content.identifier,
+                      service: coverPickerTarget.content.service,
+                      title: coverPickerTarget.content.title,
+                      description: coverPickerTarget.content.description,
+                      poster,
+                    },
+                    coverPickerTarget,
+                  );
+                }
+                setPendingVideo(null);
+                setCoverPickerTarget(null);
+                setCoverPickerOpen(false);
+              }}
+            >
+              {coverPickerMode === 'add' ? 'Add video' : 'Update cover'}
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </>
-  )
-}
+  );
+};

@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react'
+import React, { ChangeEvent, useState } from 'react';
 import {
   Box,
   Button,
@@ -12,130 +12,140 @@ import {
   SelectChangeEvent,
   OutlinedInput,
   Chip,
-  IconButton
-} from '@mui/material'
-import { useDispatch } from 'react-redux'
-import { togglePublishBlogModal } from '../../state/features/globalSlice'
-import AddIcon from '@mui/icons-material/Add'
-import CloseIcon from '@mui/icons-material/Close'
-import { styled } from '@mui/system'
+  IconButton,
+} from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { togglePublishBlogModal } from '../../state/features/globalSlice';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import { styled } from '@mui/system';
 interface SelectOption {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 interface MyModalProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
   onPublish: (
     title: string,
     description: string,
     category: string,
     tags: string[],
-    blogIdentifier: string
-  ) => Promise<void>
-  username: string
+    blogIdentifier: string,
+    wikiEnabled: boolean,
+    editorWhitelist: string[],
+    editorBlacklist: string[],
+  ) => Promise<void>;
+  username: string;
 }
 
 const ChipContainer = styled(Box)({
   display: 'flex',
   flexWrap: 'wrap',
   '& > *': {
-    margin: '4px'
-  }
-})
+    margin: '4px',
+  },
+});
 
-const MyModal: React.FC<MyModalProps> = ({
-  open,
-  onClose,
-  onPublish,
-  username
-}) => {
-  const dispatch = useDispatch()
+const MyModal: React.FC<MyModalProps> = ({ open, onClose, onPublish, username }) => {
+  const dispatch = useDispatch();
 
-  const [title, setTitle] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(
-    null
-  )
-  const [inputValue, setInputValue] = useState<string>('')
-  const [chips, setChips] = useState<string[]>([])
-  const [blogIdentifier, setBlogIdentifier] = useState(username || '')
-  const [options, setOptions] = useState<SelectOption[]>([])
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(null);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [chips, setChips] = useState<string[]>([]);
+  const [blogIdentifier, setBlogIdentifier] = useState(username || '');
+  const [options, setOptions] = useState<SelectOption[]>([]);
+  const [wikiEnabled, setWikiEnabled] = useState<boolean>(false);
+  const [whitelist, setWhitelist] = useState<string>('');
+  const [blacklist, setBlacklist] = useState<string>('');
   const handlePublish = async (): Promise<void> => {
     try {
+      const wl = whitelist
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean);
+      const bl = blacklist
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean);
       await onPublish(
         title,
         description,
         selectedOption?.id || '',
         chips,
-        blogIdentifier
-      )
-      handleClose()
+        blogIdentifier,
+        wikiEnabled,
+        wl,
+        bl,
+      );
+      handleClose();
     } catch (error: any) {
-      setErrorMessage(error.message)
+      setErrorMessage(error.message);
     }
-  }
+  };
 
   const handleClose = (): void => {
-    setTitle('')
-    setDescription('')
-    setErrorMessage('')
-    dispatch(togglePublishBlogModal(false))
-    onClose()
-  }
+    setTitle('');
+    setDescription('');
+    setErrorMessage('');
+    dispatch(togglePublishBlogModal(false));
+    onClose();
+  };
 
   const handleOptionChange = (event: SelectChangeEvent<string>) => {
-    const optionId = event.target.value
-    const selectedOption = options.find((option) => option.id === optionId)
-    setSelectedOption(selectedOption || null)
-  }
+    const optionId = event.target.value;
+    const selectedOption = options.find((option) => option.id === optionId);
+    setSelectedOption(selectedOption || null);
+  };
 
   const handleChipDelete = (index: number) => {
-    const newChips = [...chips]
-    newChips.splice(index, 1)
-    setChips(newChips)
-  }
+    const newChips = [...chips];
+    newChips.splice(index, 1);
+    setChips(newChips);
+  };
 
   const handleInputChange = (event: any) => {
-    setInputValue(event.target.value)
-  }
+    setInputValue(event.target.value);
+  };
 
   const handleInputKeyDown = (event: any) => {
     if (event.key === 'Enter' && inputValue !== '') {
       if (chips.length < 5) {
-        setChips([...chips, inputValue])
-        setInputValue('')
+        setChips([...chips, inputValue]);
+        setInputValue('');
       } else {
-        event.preventDefault()
+        event.preventDefault();
       }
     }
-  }
+  };
 
   const addChip = () => {
     if (chips.length < 5) {
-      setChips([...chips, inputValue])
-      setInputValue('')
+      setChips([...chips, inputValue]);
+      setInputValue('');
     }
-  }
+  };
 
   const getListCategories = React.useCallback(async () => {
     try {
-      const url = `/arbitrary/categories`
+      const url = `/arbitrary/categories`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      const responseData = await response.json()
-      setOptions(responseData)
+          'Content-Type': 'application/json',
+        },
+      });
+      const responseData = await response.json();
+      setOptions(responseData);
     } catch (error) {}
-  }, [])
+  }, []);
 
   React.useEffect(() => {
-    getListCategories()
-  }, [getListCategories])
+    getListCategories();
+  }, [getListCategories]);
 
   const handleInputChangeId = (event: ChangeEvent<HTMLInputElement>) => {
     // Replace any non-alphanumeric and non-space characters with an empty string
@@ -144,18 +154,18 @@ const MyModal: React.FC<MyModalProps> = ({
       .replace(/[^a-zA-Z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim()
+      .trim();
 
     if (newValue.toLowerCase().includes('post')) {
       // Replace the 'post' string with an empty string
-      newValue = newValue.replace(/post/gi, '')
+      newValue = newValue.replace(/post/gi, '');
     }
     if (newValue.toLowerCase().includes('q-blog')) {
       // Replace the 'q-blog' string with an empty string
-      newValue = newValue.replace(/q-blog/gi, '')
+      newValue = newValue.replace(/q-blog/gi, '');
     }
-    setBlogIdentifier(newValue)
-  }
+    setBlogIdentifier(newValue);
+  };
 
   return (
     <Modal
@@ -178,7 +188,7 @@ const MyModal: React.FC<MyModalProps> = ({
           flexDirection: 'column',
           gap: 2,
           overflowY: 'auto',
-          maxHeight: '95vh'
+          maxHeight: '95vh',
         }}
       >
         <Typography id="modal-title" variant="h6" component="h2">
@@ -235,6 +245,29 @@ const MyModal: React.FC<MyModalProps> = ({
             </Select>
           </FormControl>
         )}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <input
+              id="wiki-enabled-create"
+              type="checkbox"
+              checked={wikiEnabled}
+              onChange={(e) => setWikiEnabled(e.target.checked)}
+            />
+            <label htmlFor="wiki-enabled-create">Enable Wiki Mode</label>
+          </Box>
+          <TextField
+            label="Editor Whitelist (comma-separated Names)"
+            value={whitelist}
+            onChange={(e) => setWhitelist(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            label="Editor Blacklist (comma-separated Names)"
+            value={blacklist}
+            onChange={(e) => setBlacklist(e.target.value)}
+            fullWidth
+          />
+        </Box>
         <FormControl fullWidth sx={{ marginBottom: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
             <TextField
@@ -275,7 +308,7 @@ const MyModal: React.FC<MyModalProps> = ({
         </Box>
       </Box>
     </Modal>
-  )
-}
+  );
+};
 
-export default MyModal
+export default MyModal;

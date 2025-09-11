@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -12,27 +12,27 @@ import {
   SelectChangeEvent,
   OutlinedInput,
   Chip,
-  IconButton
-} from '@mui/material'
-import { styled } from '@mui/system'
-import { useDropzone } from 'react-dropzone'
-import { usePublishVideo } from './PublishVideo'
-import { toBase64 } from '../../utils/toBase64'
-import AddIcon from '@mui/icons-material/Add'
-import CloseIcon from '@mui/icons-material/Close'
+  IconButton,
+} from '@mui/material';
+import { styled } from '@mui/system';
+import { useDropzone } from 'react-dropzone';
+import { usePublishVideo } from './PublishVideo';
+import { toBase64 } from '../../utils/toBase64';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 const StyledModal = styled(Modal)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center'
-}))
+  justifyContent: 'center',
+}));
 
 const ChipContainer = styled(Box)({
   display: 'flex',
   flexWrap: 'wrap',
   '& > *': {
-    margin: '4px'
-  }
-})
+    margin: '4px',
+  },
+});
 
 const ModalContent = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -40,22 +40,22 @@ const ModalContent = styled(Box)(({ theme }) => ({
   borderRadius: theme.spacing(1),
   width: '40%',
   '&:focus': {
-    outline: 'none'
-  }
-}))
+    outline: 'none',
+  },
+}));
 
 interface PostModalProps {
-  open: boolean
-  onClose: () => void
-  onPublish: (value: any) => Promise<void>
-  post: any
-  mode?: string
-  metadata?: any
+  open: boolean;
+  onClose: () => void;
+  onPublish: (value: any) => Promise<void>;
+  post: any;
+  mode?: string;
+  metadata?: any;
 }
 
 interface SelectOption {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 const PostPublishModal: React.FC<PostModalProps> = ({
@@ -64,140 +64,133 @@ const PostPublishModal: React.FC<PostModalProps> = ({
   onPublish,
   post,
   mode,
-  metadata
+  metadata,
 }) => {
-  const [file, setFile] = useState<File | null>(null)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(
-    null
-  )
-  const [inputValue, setInputValue] = useState<string>('')
-  const [chips, setChips] = useState<string[]>([])
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(null);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [chips, setChips] = useState<string[]>([]);
 
-  const [options, setOptions] = useState<SelectOption[]>([])
-  const [tags, setTags] = useState<string[]>([])
-  const { publishVideo } = usePublishVideo()
+  const [options, setOptions] = useState<SelectOption[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const { publishVideo } = usePublishVideo();
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
-      'video/*': []
+      'video/*': [],
     },
     maxFiles: 1,
     onDrop: (acceptedFiles) => {
-      setFile(acceptedFiles[0])
-    }
-  })
+      setFile(acceptedFiles[0]);
+    },
+  });
 
   React.useEffect(() => {
     if (post.title) {
-      setTitle(post.title)
+      setTitle(post.title);
     }
     // if (post.description) {
     //   setDescription(post.description)
     // }
-  }, [post])
+  }, [post]);
 
   React.useEffect(() => {
     if (mode === 'edit' && metadata) {
       if (metadata.description) {
-        setDescription(metadata.description)
+        setDescription(metadata.description);
       }
 
-      const findCategory = options.find(
-        (option) => option.id === metadata?.category
-      )
+      const findCategory = options.find((option) => option.id === metadata?.category);
       if (findCategory) {
-        setSelectedOption(findCategory)
+        setSelectedOption(findCategory);
       }
 
-      if (!metadata?.tags || !Array.isArray(metadata?.tags)) return
+      if (!metadata?.tags || !Array.isArray(metadata?.tags)) return;
 
-      setChips(metadata.tags.slice(0, -2))
+      setChips(metadata.tags.slice(0, -2));
     }
-  }, [mode, metadata, options])
+  }, [mode, metadata, options]);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(event.target.value)
-  }
+    setTitle(event.target.value);
+  };
 
-  const handleDescriptionChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setDescription(event.target.value)
-  }
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDescription(event.target.value);
+  };
 
   const handleOptionChange = (event: SelectChangeEvent<string>) => {
-    const optionId = event.target.value
-    const selectedOption = options.find((option) => option.id === optionId)
-    setSelectedOption(selectedOption || null)
-  }
+    const optionId = event.target.value;
+    const selectedOption = options.find((option) => option.id === optionId);
+    setSelectedOption(selectedOption || null);
+  };
 
   const handleChipDelete = (index: number) => {
-    const newChips = [...chips]
-    newChips.splice(index, 1)
-    setChips(newChips)
-  }
+    const newChips = [...chips];
+    newChips.splice(index, 1);
+    setChips(newChips);
+  };
 
   const handleSubmit = async () => {
-    const formattedTags: { [key: string]: string } = {}
+    const formattedTags: { [key: string]: string } = {};
     chips.forEach((tag, i) => {
-      formattedTags[`tag${i + 1}`] = tag
-    })
+      formattedTags[`tag${i + 1}`] = tag;
+    });
 
     try {
       await onPublish({
         title,
         description,
         tags: chips,
-        category: selectedOption?.id || ''
-      })
-      setFile(null)
-      setTitle('')
-      setDescription('')
-      onClose()
+        category: selectedOption?.id || '',
+      });
+      setFile(null);
+      setTitle('');
+      setDescription('');
+      onClose();
     } catch (error) {}
-  }
+  };
 
   const handleInputChange = (event: any) => {
-    setInputValue(event.target.value)
-  }
-  
+    setInputValue(event.target.value);
+  };
 
   const handleInputKeyDown = (event: any) => {
     if (event.key === 'Enter' && inputValue !== '') {
       if (chips.length < 5) {
-        setChips([...chips, inputValue])
-        setInputValue('')
+        setChips([...chips, inputValue]);
+        setInputValue('');
       } else {
-        event.preventDefault()
+        event.preventDefault();
       }
     }
-  }
+  };
 
   const addChip = () => {
     if (chips.length < 3) {
-      setChips([...chips, inputValue])
-      setInputValue('')
+      setChips([...chips, inputValue]);
+      setInputValue('');
     }
-  }
+  };
 
   const getListCategories = React.useCallback(async () => {
     try {
-      const url = `/arbitrary/categories`
+      const url = `/arbitrary/categories`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      const responseData = await response.json()
-      setOptions(responseData)
+          'Content-Type': 'application/json',
+        },
+      });
+      const responseData = await response.json();
+      setOptions(responseData);
     } catch (error) {}
-  }, [])
+  }, []);
 
   React.useEffect(() => {
-    getListCategories()
-  }, [getListCategories])
+    getListCategories();
+  }, [getListCategories]);
 
   return (
     <StyledModal open={open} onClose={onClose}>
@@ -275,7 +268,7 @@ const PostPublishModal: React.FC<PostModalProps> = ({
         </Button>
       </ModalContent>
     </StyledModal>
-  )
-}
+  );
+};
 
-export default PostPublishModal
+export default PostPublishModal;

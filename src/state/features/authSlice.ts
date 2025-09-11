@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-
 interface AuthState {
   user: {
     address: string;
@@ -9,7 +8,7 @@ interface AuthState {
   } | null;
 }
 const initialState: AuthState = {
-  user: null
+  user: null,
 };
 
 export const authSlice = createSlice({

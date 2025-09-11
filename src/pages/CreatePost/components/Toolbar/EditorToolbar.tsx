@@ -1,41 +1,39 @@
-import React from 'react'
-import TextFieldsIcon from '@mui/icons-material/TextFields'
-import Slider from '@mui/material/Slider'
-import { AudioPanel } from '../../../../components/common/AudioPanel'
-import { Box, Toolbar, AppBar, useTheme } from '@mui/material'
-import { styled } from '@mui/system'
-import ImageUploader from '../../../../components/common/ImageUploader'
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
-import { VideoPanel } from '../../../../components/common/VideoPanel'
-import MenuOpenIcon from '@mui/icons-material/MenuOpen'
-import HandymanRoundedIcon from '@mui/icons-material/HandymanRounded'
-import Tooltip from '@mui/material/Tooltip'
-import { FilePanel } from '../../../../components/common/FilePanel'
+import React from 'react';
+import TextFieldsIcon from '@mui/icons-material/TextFields';
+import Slider from '@mui/material/Slider';
+import { AudioPanel } from '../../../../components/common/AudioPanel';
+import { Box, Toolbar, AppBar, useTheme } from '@mui/material';
+import { styled } from '@mui/system';
+import { ImagePanel } from '../../../../components/common/ImagePanel';
+import { PollPanel } from '../../../../components/common/PollPanel';
+import { VideoPanel } from '../../../../components/common/VideoPanel';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import HandymanRoundedIcon from '@mui/icons-material/HandymanRounded';
+import Tooltip from '@mui/material/Tooltip';
+import { FilePanel } from '../../../../components/common/FilePanel';
 
 const CustomToolbar = styled(Toolbar)({
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'center'
-})
+  alignItems: 'center',
+});
 
 const CustomAppBar = styled(AppBar)(({ theme }) => ({
-  backgroundColor:
-    theme.palette.mode === 'light'
-      ? theme.palette.background.default
-      : '#19191b'
-}))
+  backgroundColor: theme.palette.mode === 'light' ? theme.palette.background.default : '#19191b',
+}));
 
 interface IEditorToolbar {
-  setIsOpenAddTextModal: (val: boolean) => void
-  addImage: (base64: string) => void
-  onSelectVideo: (video: any) => void
-  onSelectAudio: (audio: any) => void
-  onSelectFile: (file: any) => void
-  paddingValue: number
-  onChangePadding: (padding: number) => void
-  isMinimal?: boolean
-  addNav?: () => void
-  switchType?: () => void
+  setIsOpenAddTextModal: (val: boolean) => void;
+  addImage: (base64: string) => void;
+  onSelectVideo: (video: any) => void;
+  onSelectAudio: (audio: any) => void;
+  onSelectFile: (file: any) => void;
+  onSelectPoll: (pollName: string) => void;
+  paddingValue: number;
+  onChangePadding: (padding: number) => void;
+  isMinimal?: boolean;
+  addNav?: () => void;
+  switchType?: () => void;
 }
 
 export const EditorToolbar = ({
@@ -44,13 +42,14 @@ export const EditorToolbar = ({
   onSelectVideo,
   onSelectAudio,
   onSelectFile,
+  onSelectPoll,
   paddingValue,
   onChangePadding,
   isMinimal = false,
   addNav,
-  switchType
+  switchType,
 }: IEditorToolbar) => {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <CustomAppBar position="sticky">
       <CustomToolbar variant="dense">
@@ -60,13 +59,13 @@ export const EditorToolbar = ({
             justifyContent: 'space-between',
             width: '100%',
             flexWrap: 'wrap',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
         >
           <Box
             sx={{
               display: 'flex',
-              gap: '10px'
+              gap: '10px',
             }}
           >
             <Tooltip title="Add Text" arrow>
@@ -75,32 +74,21 @@ export const EditorToolbar = ({
                 sx={{
                   cursor: 'pointer',
                   width: 'auto',
-                  height: '30px'
+                  height: '30px',
                 }}
               />
             </Tooltip>
 
-            <ImageUploader onPick={addImage}>
-              <Tooltip title="Add an image" arrow>
-                <AddPhotoAlternateIcon
-                  sx={{
-                    cursor: 'pointer',
-                    width: 'auto',
-                    height: '30px'
-                  }}
-                />
-              </Tooltip>
-            </ImageUploader>
-
+            <ImagePanel onSelect={addImage} />
             <VideoPanel onSelect={onSelectVideo} />
-
             <AudioPanel onSelect={onSelectAudio} />
             <FilePanel onSelect={onSelectFile} />
+            <PollPanel onSelect={onSelectPoll} />
           </Box>
           <Box
             sx={{
               display: 'flex',
-              gap: '10px'
+              gap: '10px',
             }}
           >
             {!isMinimal && (
@@ -109,9 +97,7 @@ export const EditorToolbar = ({
                   <Slider
                     size="small"
                     value={paddingValue}
-                    onChange={(event: any) =>
-                      onChangePadding(event.target.value)
-                    }
+                    onChange={(event: any) => onChangePadding(event.target.value)}
                     defaultValue={5}
                     aria-label="Default"
                     valueLabelDisplay="auto"
@@ -119,7 +105,7 @@ export const EditorToolbar = ({
                     max={40}
                     sx={{
                       color: theme.palette.text.primary,
-                      width: '100px'
+                      width: '100px',
                     }}
                   />
                 </Box>
@@ -132,7 +118,7 @@ export const EditorToolbar = ({
                   sx={{
                     cursor: 'pointer',
                     width: 'auto',
-                    height: '30px'
+                    height: '30px',
                   }}
                 />
               </Tooltip>
@@ -144,7 +130,7 @@ export const EditorToolbar = ({
                   sx={{
                     cursor: 'pointer',
                     width: 'auto',
-                    height: '30px'
+                    height: '30px',
                   }}
                 />
               </Tooltip>
@@ -153,5 +139,5 @@ export const EditorToolbar = ({
         </Box>
       </CustomToolbar>
     </CustomAppBar>
-  )
-}
+  );
+};

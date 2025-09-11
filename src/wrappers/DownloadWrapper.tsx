@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
-import { addUser } from '../state/features/authSlice'
-import ShortUniqueId from 'short-unique-id'
-import { RootState } from '../state/store'
-import PublishBlogModal from '../components/modals/PublishBlogModal'
-import EditBlogModal from '../components/modals/EditBlogModal'
+import { addUser } from '../state/features/authSlice';
+import ShortUniqueId from 'short-unique-id';
+import { RootState } from '../state/store';
+import PublishBlogModal from '../components/modals/PublishBlogModal';
+import EditBlogModal from '../components/modals/EditBlogModal';
 
 import {
   setAddToDownloads,
@@ -14,68 +14,56 @@ import {
   setIsLoadingGlobal,
   toggleEditBlogModal,
   togglePublishBlogModal,
-  updateDownloads
-} from '../state/features/globalSlice'
+  updateDownloads,
+} from '../state/features/globalSlice';
 
-import { useFetchPosts } from '../hooks/useFetchPosts'
-import { setNotification } from '../state/features/notificationsSlice'
-import { DownloadTaskManager } from '../components/common/DownloadTaskManager'
+import { useFetchPosts } from '../hooks/useFetchPosts';
+import { setNotification } from '../state/features/notificationsSlice';
+import { DownloadTaskManager } from '../components/common/DownloadTaskManager';
 
 interface Props {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
-const uid = new ShortUniqueId()
+const uid = new ShortUniqueId();
 
 const defaultValues: MyContextInterface = {
-  downloadVideo: () => {}
-}
+  downloadVideo: () => {},
+};
 interface IDownloadVideoParams {
-  name: string
-  service: string
-  identifier: string
-  blogPost: any
+  name: string;
+  service: string;
+  identifier: string;
+  blogPost: any;
 }
 interface MyContextInterface {
-  downloadVideo: ({
-    name,
-    service,
-    identifier,
-    blogPost
-  }: IDownloadVideoParams) => void
+  downloadVideo: ({ name, service, identifier, blogPost }: IDownloadVideoParams) => void;
 }
-export const MyContext = React.createContext<MyContextInterface>(defaultValues)
+export const MyContext = React.createContext<MyContextInterface>(defaultValues);
 
 const DownloadWrapper: React.FC<Props> = ({ children }) => {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { user } = useSelector((state: RootState) => state.auth)
-  const { audios, currAudio } = useSelector((state: RootState) => state.global)
-  const { getBlogPosts } = useFetchPosts()
-  const { downloads, currentBlog, isLoadingGlobal, isOpenEditBlogModal } =
-    useSelector((state: RootState) => state.global)
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { audios, currAudio } = useSelector((state: RootState) => state.global);
+  const { getBlogPosts } = useFetchPosts();
+  const { downloads, currentBlog, isLoadingGlobal, isOpenEditBlogModal } = useSelector(
+    (state: RootState) => state.global,
+  );
 
-  const addToPile = async ({
-    name,
-    service,
-    identifier,
-    blogPost
-  }: IDownloadVideoParams) => {
+  const addToPile = async ({ name, service, identifier, blogPost }: IDownloadVideoParams) => {
     try {
       const res = await qortalRequest({
         action: 'GET_QDN_RESOURCE_STATUS',
         name: name,
         service: service,
-        identifier: identifier
-      })
-      if (
-        res?.status === 'READY' ||
-        (res.percentLoaded > 75 && res.totalChunkCount < 100)
-      ) {
-        return false
+        identifier: identifier,
+      });
+      if (res?.status === 'READY' || (res.percentLoaded > 75 && res.totalChunkCount < 100)) {
+        return false;
       }
     } catch (error) {}
-  }
+  };
 
   const fetchResource = async ({ name, service, identifier }: any) => {
     try {
@@ -83,75 +71,67 @@ const DownloadWrapper: React.FC<Props> = ({ children }) => {
         action: 'GET_QDN_RESOURCE_PROPERTIES',
         name,
         service,
-        identifier
-      })
+        identifier,
+      });
     } catch (error) {}
-  }
+  };
 
   const fetchVideoUrl = async ({ name, service, identifier }: any) => {
     try {
-      fetchResource({ name, service, identifier })
+      fetchResource({ name, service, identifier });
       let url = await qortalRequest({
         action: 'GET_QDN_RESOURCE_URL',
         service: service,
         name: name,
-        identifier: identifier
-      })
+        identifier: identifier,
+      });
       if (url) {
         dispatch(
           updateDownloads({
             name,
             service,
             identifier,
-            url
-          })
-        )
+            url,
+          }),
+        );
       }
     } catch (error) {}
-  }
+  };
 
-  const performDownload = ({
-    name,
-    service,
-    identifier,
-    blogPost
-  }: IDownloadVideoParams) => {
+  const performDownload = ({ name, service, identifier, blogPost }: IDownloadVideoParams) => {
     dispatch(
       setAddToDownloads({
         name,
         service,
         identifier,
-        blogPost
-      })
-    )
+        blogPost,
+      }),
+    );
 
-    const url = `/arbitrary/${service}/${name}/${identifier}`
-    let isCalling = false
-    let percentLoaded = 0
-    let timer = 24
+    const url = `/arbitrary/${service}/${name}/${identifier}`;
+    let isCalling = false;
+    let percentLoaded = 0;
+    let timer = 24;
     const intervalId = setInterval(async () => {
-      if (isCalling) return
-      isCalling = true
+      if (isCalling) return;
+      isCalling = true;
       const res = await qortalRequest({
         action: 'GET_QDN_RESOURCE_STATUS',
         name: name,
         service: service,
-        identifier: identifier
-      })
-      isCalling = false
+        identifier: identifier,
+      });
+      isCalling = false;
       if (res.localChunkCount) {
         if (res.percentLoaded) {
-          if (
-            res.percentLoaded === percentLoaded &&
-            res.percentLoaded !== 100
-          ) {
-            timer = timer - 5
+          if (res.percentLoaded === percentLoaded && res.percentLoaded !== 100) {
+            timer = timer - 5;
           } else {
-            timer = 24
+            timer = 24;
           }
           if (timer < 0) {
-            timer = 24
-            isCalling = true
+            timer = 24;
+            isCalling = true;
             dispatch(
               updateDownloads({
                 name,
@@ -159,73 +139,66 @@ const DownloadWrapper: React.FC<Props> = ({ children }) => {
                 identifier,
                 status: {
                   ...res,
-                  status: 'REFETCHING'
-                }
-              })
-            )
+                  status: 'REFETCHING',
+                },
+              }),
+            );
             setTimeout(() => {
-              isCalling = false
+              isCalling = false;
               fetchResource({
                 name,
                 service,
-                identifier
-              })
-            }, 25000)
-            return
+                identifier,
+              });
+            }, 25000);
+            return;
           }
-          percentLoaded = res.percentLoaded
+          percentLoaded = res.percentLoaded;
         }
         dispatch(
           updateDownloads({
             name,
             service,
             identifier,
-            status: res
-          })
-        )
+            status: res,
+          }),
+        );
       }
 
       // check if progress is 100% and clear interval if true
       if (res?.status === 'READY') {
-        clearInterval(intervalId)
+        clearInterval(intervalId);
         dispatch(
           updateDownloads({
             name,
             service,
             identifier,
-            status: res
-          })
-        )
+            status: res,
+          }),
+        );
       }
-    }, 5000) // 1 second interval
+    }, 5000); // 1 second interval
 
     fetchVideoUrl({
       name,
       service,
-      identifier
-    })
-  }
+      identifier,
+    });
+  };
 
-  const downloadVideo = async ({
-    name,
-    service,
-    identifier,
-    blogPost
-  }: IDownloadVideoParams) => {
+  const downloadVideo = async ({ name, service, identifier, blogPost }: IDownloadVideoParams) => {
     try {
-
-
       performDownload({
         name,
         service,
         identifier,
-        blogPost
-      })
-      return 'addedToList'
+        blogPost,
+      });
+      return 'addedToList';
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   return (
     <>
@@ -234,7 +207,7 @@ const DownloadWrapper: React.FC<Props> = ({ children }) => {
         {children}
       </MyContext.Provider>
     </>
-  )
-}
+  );
+};
 
-export default DownloadWrapper
+export default DownloadWrapper;

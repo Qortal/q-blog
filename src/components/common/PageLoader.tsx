@@ -1,18 +1,15 @@
 import React from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/system/Box';
-import { useTheme } from '@mui/material'
+import { useTheme } from '@mui/material';
 
 interface PageLoaderProps {
-  size?: number
-  thickness?: number
+  size?: number;
+  thickness?: number;
 }
 
-const PageLoader: React.FC<PageLoaderProps> = ({
-  size = 40,
-  thickness = 5
-}) => {
-  const theme = useTheme()
+const PageLoader: React.FC<PageLoaderProps> = ({ size = 40, thickness = 5 }) => {
+  const theme = useTheme();
 
   return (
     <Box
@@ -26,18 +23,18 @@ const PageLoader: React.FC<PageLoaderProps> = ({
         top: 0,
         left: 0,
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        zIndex: 1000
+        zIndex: 1000,
       }}
     >
       <CircularProgress
         size={size}
         thickness={thickness}
         sx={{
-          color: theme.palette.secondary.main
+          color: theme.palette.secondary.main,
         }}
       />
     </Box>
-  )
-}
+  );
+};
 
 export default PageLoader;

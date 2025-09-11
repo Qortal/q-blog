@@ -1,22 +1,16 @@
-import * as React from 'react'
-import { styled, useTheme } from '@mui/material/styles'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'
-import { MyContext } from '../wrappers/DownloadWrapper'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../state/store'
-import { CircularProgress } from '@mui/material'
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import {
-  setCurrAudio,
-  setShowingAudioPlayer
-} from '../state/features/globalSlice'
-import {
-  base64ToUint8Array,
-  objectToUint8ArrayFromResponse
-} from '../utils/toBase64'
-import { setNotification } from '../state/features/notificationsSlice'
+import * as React from 'react';
+import { styled, useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import { MyContext } from '../wrappers/DownloadWrapper';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../state/store';
+import { CircularProgress } from '@mui/material';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { setCurrAudio, setShowingAudioPlayer } from '../state/features/globalSlice';
+import { base64ToUint8Array, objectToUint8ArrayFromResponse } from '../utils/toBase64';
+import { setNotification } from '../state/features/notificationsSlice';
 
 const Widget = styled('div')(({ theme }) => ({
   padding: 8,
@@ -30,9 +24,9 @@ const Widget = styled('div')(({ theme }) => ({
   background: '#03a9f4',
   transition: '0.2s all',
   '&:hover': {
-    opacity: 0.75
-  }
-}))
+    opacity: 0.75,
+  },
+}));
 
 const CoverImage = styled('div')({
   width: 40,
@@ -43,36 +37,36 @@ const CoverImage = styled('div')({
   borderRadius: 8,
   backgroundColor: 'rgba(0,0,0,0.08)',
   '& > img': {
-    width: '100%'
-  }
-})
+    width: '100%',
+  },
+});
 
 const TinyText = styled(Typography)({
   fontSize: '0.75rem',
   opacity: 0.38,
   fontWeight: 500,
-  letterSpacing: 0.2
-})
+  letterSpacing: 0.2,
+});
 
 interface IAudioElement {
-  title: string
-  description?: string
-  author?: string
-  fileInfo?: any
-  postId?: string
-  user?: string
-  children?: React.ReactNode
-  mimeType?: string
-  disable?: boolean
-  mode?: string
-  otherUser?: string
+  title: string;
+  description?: string;
+  author?: string;
+  fileInfo?: any;
+  postId?: string;
+  user?: string;
+  children?: React.ReactNode;
+  mimeType?: string;
+  disable?: boolean;
+  mode?: string;
+  otherUser?: string;
 }
 
 interface CustomWindow extends Window {
-  showSaveFilePicker: any // Replace 'any' with the appropriate type if you know it
+  showSaveFilePicker: any; // Replace 'any' with the appropriate type if you know it
 }
 
-const customWindow = window as unknown as CustomWindow
+const customWindow = window as unknown as CustomWindow;
 
 export default function FileElement({
   title,
@@ -85,68 +79,64 @@ export default function FileElement({
   mimeType,
   disable,
   mode,
-  otherUser
+  otherUser,
 }: IAudioElement) {
-  const { downloadVideo } = React.useContext(MyContext)
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  const [fileProperties, setFileProperties] = React.useState<any>(null)
-  const [downloadLoader, setDownloadLoader] = React.useState<any>(false)
+  const { downloadVideo } = React.useContext(MyContext);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [fileProperties, setFileProperties] = React.useState<any>(null);
+  const [downloadLoader, setDownloadLoader] = React.useState<any>(false);
 
-  const [pdfSrc, setPdfSrc] = React.useState('')
-  const { downloads } = useSelector((state: RootState) => state.global)
-  const { user: username } = useSelector((state: RootState) => state.auth)
+  const [pdfSrc, setPdfSrc] = React.useState('');
+  const { downloads } = useSelector((state: RootState) => state.global);
+  const { user: username } = useSelector((state: RootState) => state.auth);
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const download = React.useMemo(() => {
-    if (!downloads || !fileInfo?.identifier) return {}
-    const findDownload = downloads[fileInfo?.identifier]
+    if (!downloads || !fileInfo?.identifier) return {};
+    const findDownload = downloads[fileInfo?.identifier];
 
-    if (!findDownload) return {}
-    return findDownload
-  }, [downloads, fileInfo])
+    if (!findDownload) return {};
+    return findDownload;
+  }, [downloads, fileInfo]);
 
   const resourceStatus = React.useMemo(() => {
-    return download?.status || {}
-  }, [download])
+    return download?.status || {};
+  }, [download]);
   const saveFileToDisk = async (blob: any, fileName: any) => {
     try {
       const fileHandle = await customWindow.showSaveFilePicker({
         suggestedName: fileName,
         types: [
           {
-            description: 'File'
-          }
-        ]
-      })
+            description: 'File',
+          },
+        ],
+      });
       const writeFile = async (fileHandle: any, contents: any) => {
-        const writable = await fileHandle.createWritable()
-        await writable.write(contents)
-        await writable.close()
-      }
-      writeFile(fileHandle, blob).then(() => console.log('FILE SAVED'))
+        const writable = await fileHandle.createWritable();
+        await writable.write(contents);
+        await writable.close();
+      };
+      writeFile(fileHandle, blob).then(() => console.log('FILE SAVED'));
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
   const handlePlay = async () => {
-    if (disable) return
-    if (
-      resourceStatus?.status === 'READY' &&
-      download?.url &&
-      download?.blogPost?.filename
-    ) {
-      if (downloadLoader) return
+    if (disable) return;
+    if (resourceStatus?.status === 'READY' && download?.url && download?.blogPost?.filename) {
+      if (downloadLoader) return;
       dispatch(
         setNotification({
           msg: 'Saving file... please wait',
-          alertType: 'info'
-        })
-      )
+          alertType: 'info',
+        }),
+      );
       try {
-        const { name, service, identifier } = fileInfo
+        const { name, service, identifier } = fileInfo;
 
-        setDownloadLoader(true)
-        const url = `/arbitrary/${service}/${name}/${identifier}`
+        setDownloadLoader(true);
+        const url = `/arbitrary/${service}/${name}/${identifier}`;
         fetch(url)
           .then((response) => response.blob())
           .then(async (blob) => {
@@ -154,77 +144,77 @@ export default function FileElement({
               action: 'SAVE_FILE',
               blob,
               filename: download?.blogPost?.filename,
-              mimeType: download?.blogPost?.mimeType || ''
-            })
+              mimeType: download?.blogPost?.mimeType || '',
+            });
             // saveAs(blob, download?.blogPost?.filename)
           })
           .catch((error) => {
-            console.error('Error fetching the video:', error)
+            console.error('Error fetching the video:', error);
             // clearInterval(intervalId)
           })
           .finally(() => {
-            setDownloadLoader(false)
-          })
+            setDownloadLoader(false);
+          });
       } catch (error: any) {
-        let notificationObj = null
+        let notificationObj = null;
         if (typeof error === 'string') {
           notificationObj = {
             msg: error || 'Failed to send message',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         } else if (typeof error?.error === 'string') {
           notificationObj = {
             msg: error?.error || 'Failed to send message',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         } else {
           notificationObj = {
             msg: error?.message || 'Failed to send message',
-            alertType: 'error'
-          }
+            alertType: 'error',
+          };
         }
-        if (!notificationObj) return
-        dispatch(setNotification(notificationObj))
+        if (!notificationObj) return;
+        dispatch(setNotification(notificationObj));
       } finally {
         if (mode === 'mail') {
-          setDownloadLoader(false)
+          setDownloadLoader(false);
         }
       }
-      return
+      return;
     }
-    if (!postId) return
-    const { name, service, identifier } = fileInfo
-    let filename = fileProperties?.filename
-    let mimeType = fileProperties?.mimeType
+    if (!postId) return;
+    const { name, service, identifier } = fileInfo;
+    let filename = fileProperties?.filename;
+    let mimeType = fileProperties?.mimeType;
     if (!fileProperties) {
       try {
         dispatch(
           setNotification({
             msg: 'Downloading file... please wait',
-            alertType: 'info'
-          })
-        )
+            alertType: 'info',
+          }),
+        );
         let res = await qortalRequest({
           action: 'GET_QDN_RESOURCE_PROPERTIES',
           name: name,
           service: service,
-          identifier: identifier
-        })
-        setFileProperties(res)
-        filename = res?.filename
-        mimeType = res?.mimeType
+          identifier: identifier,
+        });
+        setFileProperties(res);
+        filename = res?.filename;
+        mimeType = res?.mimeType;
       } catch (error: any) {
         dispatch(
           setNotification({
             msg: error?.message || 'Error with download. Please try again',
-            alertType: 'error'
-          })
-        )
+            alertType: 'error',
+          }),
+        );
       }
     }
-    if (!filename) return
+    if (!filename) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     downloadVideo({
       name,
       service,
@@ -236,20 +226,16 @@ export default function FileElement({
         audioDescription: description,
         audioAuthor: author,
         filename,
-        mimeType
-      }
-    })
-  }
+        mimeType,
+      },
+    });
+  };
 
   React.useEffect(() => {
-    if (
-      resourceStatus?.status === 'READY' &&
-      download?.url &&
-      download?.blogPost?.filename
-    ) {
-      setIsLoading(false)
+    if (resourceStatus?.status === 'READY' && download?.url && download?.blogPost?.filename) {
+      setIsLoading(false);
     }
-  }, [resourceStatus, download])
+  }, [resourceStatus, download]);
 
   return (
     <Box
@@ -258,7 +244,7 @@ export default function FileElement({
         width: '100%',
         overflow: 'hidden',
         position: 'relative',
-        cursor: 'pointer'
+        cursor: 'pointer',
       }}
     >
       {children && (
@@ -267,25 +253,22 @@ export default function FileElement({
             display: 'flex',
             alignItems: 'center',
             position: 'relative',
-            gap: '7px'
+            gap: '7px',
           }}
         >
           {children}{' '}
-          {(resourceStatus.status && resourceStatus?.status !== 'READY') ||
-          isLoading ? (
+          {(resourceStatus.status && resourceStatus?.status !== 'READY') || isLoading ? (
             <CircularProgress color="secondary" size={14} />
           ) : resourceStatus?.status === 'READY' ? (
             <>
               <Typography
                 sx={{
-                  fontSize: '14px'
+                  fontSize: '14px',
                 }}
               >
                 Ready to save: click here
               </Typography>
-              {downloadLoader && (
-                <CircularProgress color="secondary" size={14} />
-              )}
+              {downloadLoader && <CircularProgress color="secondary" size={14} />}
             </>
           ) : null}
         </Box>
@@ -297,22 +280,18 @@ export default function FileElement({
               <AttachFileIcon
                 sx={{
                   width: '90%',
-                  height: 'auto'
+                  height: 'auto',
                 }}
               />
             </CoverImage>
             <Box sx={{ ml: 1.5, minWidth: 0 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                fontWeight={500}
-              >
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>
                 {author}
               </Typography>
               <Typography
                 noWrap
                 sx={{
-                  fontSize: '16px'
+                  fontSize: '16px',
                 }}
               >
                 <b>{title}</b>
@@ -321,7 +300,7 @@ export default function FileElement({
                 noWrap
                 letterSpacing={-0.25}
                 sx={{
-                  fontSize: '14px'
+                  fontSize: '14px',
                 }}
               >
                 {description}
@@ -331,7 +310,7 @@ export default function FileElement({
                   noWrap
                   letterSpacing={-0.25}
                   sx={{
-                    fontSize: '12px'
+                    fontSize: '12px',
                   }}
                 >
                   {mimeType}
@@ -339,8 +318,7 @@ export default function FileElement({
               )}
             </Box>
           </Box>
-          {((resourceStatus.status && resourceStatus?.status !== 'READY') ||
-            isLoading) && (
+          {((resourceStatus.status && resourceStatus?.status !== 'READY') || isLoading) && (
             <Box
               position="absolute"
               top={0}
@@ -357,7 +335,7 @@ export default function FileElement({
                 flexDirection: 'column',
                 gap: '10px',
                 padding: '8px',
-                borderRadius: '10px'
+                borderRadius: '10px',
               }}
             >
               <CircularProgress color="secondary" />
@@ -367,15 +345,14 @@ export default function FileElement({
                   component="div"
                   sx={{
                     color: 'white',
-                    fontSize: '14px'
+                    fontSize: '14px',
                   }}
                 >
                   {resourceStatus?.status === 'REFETCHING' ? (
                     <>
                       <>
                         {(
-                          (resourceStatus?.localChunkCount /
-                            resourceStatus?.totalChunkCount) *
+                          (resourceStatus?.localChunkCount / resourceStatus?.totalChunkCount) *
                           100
                         )?.toFixed(0)}
                         %
@@ -388,8 +365,7 @@ export default function FileElement({
                   ) : resourceStatus?.status !== 'READY' ? (
                     <>
                       {(
-                        (resourceStatus?.localChunkCount /
-                          resourceStatus?.totalChunkCount) *
+                        (resourceStatus?.localChunkCount / resourceStatus?.totalChunkCount) *
                         100
                       )?.toFixed(0)}
                       %
@@ -401,45 +377,41 @@ export default function FileElement({
               )}
             </Box>
           )}
-          {resourceStatus?.status === 'READY' &&
-            download?.url &&
-            download?.blogPost?.filename && (
-              <Box
-                position="absolute"
-                top={0}
-                left={0}
-                right={0}
-                bottom={0}
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                zIndex={4999}
-                bgcolor="rgba(0, 0, 0, 0.6)"
+          {resourceStatus?.status === 'READY' && download?.url && download?.blogPost?.filename && (
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              zIndex={4999}
+              bgcolor="rgba(0, 0, 0, 0.6)"
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: '10px',
+                padding: '8px',
+                borderRadius: '10px',
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                component="div"
                 sx={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: '10px',
-                  padding: '8px',
-                  borderRadius: '10px'
+                  color: 'white',
+                  fontSize: '14px',
                 }}
               >
-                <Typography
-                  variant="subtitle2"
-                  component="div"
-                  sx={{
-                    color: 'white',
-                    fontSize: '14px'
-                  }}
-                >
-                  Ready to save: click here
-                </Typography>
-                {downloadLoader && (
-                  <CircularProgress color="secondary" size={14} />
-                )}
-              </Box>
-            )}
+                Ready to save: click here
+              </Typography>
+              {downloadLoader && <CircularProgress color="secondary" size={14} />}
+            </Box>
+          )}
         </Widget>
       )}
     </Box>
-  )
+  );
 }

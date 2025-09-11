@@ -1,145 +1,188 @@
-import { Box, Button, Typography } from '@mui/material'
-import React, { useEffect, useMemo, useState } from 'react'
-import { ReusableModal } from '../../components/modals/ReusableModal'
-import { CreatePostBuilder } from './CreatePostBuilder'
-import { CreatePostMinimal } from './CreatePostMinimal'
-import HandymanRoundedIcon from '@mui/icons-material/HandymanRounded'
-import HourglassFullRoundedIcon from '@mui/icons-material/HourglassFullRounded'
-import { display } from '@mui/system'
-import { useDispatch, useSelector } from 'react-redux'
-import { setIsLoadingGlobal } from '../../state/features/globalSlice'
-import { useNavigate, useParams } from 'react-router-dom'
-import { checkStructure } from '../../utils/checkStructure'
-import { RootState } from '../../state/store'
-import {
-  addPrefix,
-  buildIdentifierFromCreateTitleIdAndId
-} from '../../utils/blogIdformats'
-import { Tipping } from '../../components/common/Tipping/Tipping'
-type EditorType = 'minimal' | 'builder'
+import { Box, Button, Typography } from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ReusableModal } from '../../components/modals/ReusableModal';
+import { CreatePostBuilder } from './CreatePostBuilder';
+import { CreatePostMinimal } from './CreatePostMinimal';
+import HandymanRoundedIcon from '@mui/icons-material/HandymanRounded';
+import HourglassFullRoundedIcon from '@mui/icons-material/HourglassFullRounded';
+import { useDispatch, useSelector } from 'react-redux';
+import { setIsLoadingGlobal } from '../../state/features/globalSlice';
+import { useNavigate, useParams } from 'react-router-dom';
+import { checkStructure } from '../../utils/checkStructure';
+import { RootState } from '../../state/store';
+import { addPrefix } from '../../utils/blogIdformats';
+import { getCachedBlogSettings } from '../../utils/wikiSettingsCache';
+import { BlogSettings, canEdit, selectCanonical } from '../../utils/wiki';
+
+type EditorType = 'minimal' | 'builder';
+
 interface CreatePostProps {
-  mode?: string
+  mode?: string;
 }
+
 export const CreatePost = ({ mode }: CreatePostProps) => {
-  const { user: username, postId, blog } = useParams()
+  const { user: username, postId, blog } = useParams();
+  const user = useSelector((state: RootState) => state.auth?.user);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // In edit mode, build the full identifier from :blog and :postId
   const fullPostId = useMemo(() => {
-    if (!blog || !postId || mode !== 'edit') return ''
-    const formBlogId = addPrefix(blog)
-    const formPostId = buildIdentifierFromCreateTitleIdAndId(formBlogId, postId)
-    return formPostId
-  }, [blog, postId, mode])
-  const user = useSelector((state: RootState) => state.auth?.user)
+    if (mode !== 'edit') return '';
+    if (!blog || !postId) return '';
+    const blogFull = addPrefix(blog);
+    return `${blogFull}-post-${postId}`;
+  }, [postId, mode, blog]);
 
-  const [toggleEditorType, setToggleEditorType] = useState<EditorType | null>(
-    null
-  )
-  const [blogContentForEdit, setBlogContentForEdit] = useState<any>(null)
-  const [blogMetadataForEdit, setBlogMetadataForEdit] = useState<any>(null)
-  const [editType, setEditType] = useState<EditorType | null>(null)
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const [toggleEditorType, setToggleEditorType] = useState<EditorType | null>(null);
+  const [blogContentForEdit, setBlogContentForEdit] = useState<any>(null);
+  const [blogMetadataForEdit, setBlogMetadataForEdit] = useState<any>(null);
+  const [editType, setEditType] = useState<EditorType | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  // Creation flow: open editor type chooser
+  useEffect(() => {
     if (!toggleEditorType && mode !== 'edit') {
-      setIsOpen(true)
+      setIsOpen(true);
     }
-  }, [setIsOpen, toggleEditorType])
+  }, [setIsOpen, toggleEditorType, mode]);
 
-  const switchType = () => {
-    setIsOpen(true)
-  }
+  const switchType = () => setIsOpen(true);
 
-  useEffect(()=> {
-    if(username && user?.name && mode === 'edit'){
-      if(username !== user?.name){
-        navigate('/')
+  // Permission check for edit
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (mode !== 'edit' || !blog) return;
+      const viewer = user?.name;
+      if (!viewer) {
+        // Defer permission decision until viewer is known (prevents redirect race in tests)
+        return;
       }
-    }
-  }, [user, username, mode])
+      const blogFull = addPrefix(blog);
+      try {
+        const { ownerName, settings } = await getCachedBlogSettings(blogFull);
+        const allowed = canEdit(viewer, settings as BlogSettings, ownerName);
+        if (!allowed && !cancelled) navigate('/');
+      } catch {
+        if (!cancelled) navigate('/');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.name, blog, mode, navigate]);
 
+  // Load post content for edit
   const getBlogPost = React.useCallback(async () => {
+    if (!blog || !postId) return;
+    const blogFull = addPrefix(blog);
+    const fullId = fullPostId;
     try {
-      dispatch(setIsLoadingGlobal(true))
-      const url = `/arbitrary/BLOG_POST/${username}/${fullPostId}`
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
+      dispatch(setIsLoadingGlobal(true));
+
+      // 1) Fast path: fetch content immediately using the route ":user" param
+      const initialName = username || '';
+      try {
+        const contentUrl = `/arbitrary/BLOG_POST/${initialName}/${fullId}`;
+        const contentResp = await fetch(contentUrl, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const contentJson = await contentResp.json();
+        if (checkStructure(contentJson)) {
+          const blogType = contentJson?.layoutGeneralSettings?.blogPostType;
+          setEditType(blogType || 'minimal');
+          setBlogContentForEdit(contentJson);
+        } else {
+          // Backward-compat fallback for legacy posts
+          const fallbackLayouts =
+            contentJson?.layouts &&
+            typeof contentJson.layouts === 'object' &&
+            Array.isArray(contentJson.layouts.rows)
+              ? contentJson.layouts
+              : { rows: [] };
+          const fallback = {
+            title: contentJson?.title ?? '',
+            createdAt: Date.now(),
+            postContent: Array.isArray(contentJson?.postContent) ? contentJson.postContent : [],
+            layouts: fallbackLayouts,
+            layoutGeneralSettings: contentJson?.layoutGeneralSettings ?? {
+              blogPostType: 'minimal',
+            },
+          } as any;
+          setEditType('minimal');
+          setBlogContentForEdit(fallback);
         }
-      })
-
-      const responseData = await response.json()
-      if (checkStructure(responseData)) {
-        // setNewPostContent(responseData.postContent)
-        // setTitle(responseData?.title || '')
-        // setBlogInfo(responseData)
-        const blogType = responseData?.layoutGeneralSettings?.blogPostType
-
-        if (blogType) {
-          setEditType(blogType)
-          setBlogContentForEdit(responseData)
-        }
-        //TODO - NAME SHOULD BE EXACT
-        // const url2 = `/arbitrary/resources/search?mode=ALL&service=BLOG_POST&identifier=${fullPostId}&exactMatchNames=${username}&limit=1&includemetadata=true`
-        const url2 = `/arbitrary/resources?service=BLOG_POST&identifier=${fullPostId}&name=${username}&limit=1&includemetadata=true`
-
-        const responseBlogs = await fetch(url2, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-
-        const dataMetadata = await responseBlogs.json()
-        if (dataMetadata && dataMetadata.length > 0) {
-          setBlogMetadataForEdit(dataMetadata[0])
-        }
+      } catch {
+        // ignore; canonical resolution may still populate metadata
       }
-    } catch (error) {
+
+      // 2) Resolve canonical author + revisions metadata in the background
+      (async () => {
+        try {
+          const { ownerName, settings } = await getCachedBlogSettings(blogFull);
+          let contentName = initialName;
+
+          // Search revisions for this identifier
+          let items: any[] = [];
+          try {
+            const searchUrl = `/arbitrary/resources/search?service=BLOG_POST&identifier=${encodeURIComponent(
+              fullId,
+            )}&includemetadata=true&reverse=true`;
+            const resp = await fetch(searchUrl, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+            items = (await resp.json()) || [];
+          } catch {
+            items = [];
+          }
+
+          if (settings?.wikiEnabled && Array.isArray(items) && items.length > 0) {
+            const revisions = items.map((it: any) => ({
+              id: it.identifier,
+              originPostId: it.identifier,
+              lineageBlogId: blogFull,
+              authorName: it.name,
+              updatedAt: it.updated,
+              qdnUpdated: it.updated,
+              published: true,
+            }));
+            const sel = selectCanonical(revisions, settings as BlogSettings, ownerName, {
+              expectedLineageBlogId: blogFull,
+            });
+            if (sel?.authorName) contentName = sel.authorName;
+          }
+
+          const chosenMeta = (items || []).find((it: any) => it.name === contentName) || items?.[0];
+          if (chosenMeta) setBlogMetadataForEdit(chosenMeta);
+        } catch {
+          // ignore metadata issues; editor remains usable
+        }
+      })();
     } finally {
-      dispatch(setIsLoadingGlobal(false))
+      dispatch(setIsLoadingGlobal(false));
     }
-  }, [username, fullPostId])
-  React.useEffect(() => {
+  }, [username, fullPostId, blog, postId, dispatch]);
+
+  useEffect(() => {
     if (mode === 'edit') {
-      getBlogPost()
+      void getBlogPost();
     }
-  }, [mode])
+  }, [mode, getBlogPost]);
 
   return (
     <>
-      {/* {toggleEditorType === 'minimal' && (
-        <Button onClick={() => switchType()}>Switch to Builder</Button>
-      )}
-      {toggleEditorType === 'builder' && (
-        <Button onClick={() => switchType()}>Switch to Minimal</Button>
-      )} */}
-      {isOpen && (
-        <ReusableModal
-          open={isOpen}
-          customStyles={{
-            maxWidth: '500px'
-          }}
-        >
+      {/* Create mode type chooser */}
+      {isOpen && mode !== 'edit' && (
+        <ReusableModal open={isOpen} customStyles={{ maxWidth: '500px' }}>
           {toggleEditorType && (
-            <Typography>
-              Switching editor type will delete your current progress
-            </Typography>
+            <Typography>Switching editor type will delete your current progress</Typography>
           )}
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 2
-            }}
-          >
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
             <Box
               onClick={() => {
-                setToggleEditorType('minimal')
-                setIsOpen(false)
+                setToggleEditorType('minimal');
+                setIsOpen(false);
               }}
               sx={{
                 display: 'flex',
@@ -149,7 +192,7 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
                 padding: '20px',
                 borderRadius: '6px',
                 border: '1px solid',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               <Typography>Minimal Editor</Typography>
@@ -157,8 +200,8 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
             </Box>
             <Box
               onClick={() => {
-                setToggleEditorType('builder')
-                setIsOpen(false)
+                setToggleEditorType('builder');
+                setIsOpen(false);
               }}
               sx={{
                 display: 'flex',
@@ -168,7 +211,7 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
                 padding: '20px',
                 borderRadius: '6px',
                 border: '1px solid',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               <Typography>Builder Editor</Typography>
@@ -179,12 +222,15 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
         </ReusableModal>
       )}
 
-      {toggleEditorType === 'minimal' && (
+      {/* Create mode editors */}
+      {toggleEditorType === 'minimal' && mode !== 'edit' && (
         <CreatePostMinimal switchType={switchType} />
       )}
-      {toggleEditorType === 'builder' && (
+      {toggleEditorType === 'builder' && mode !== 'edit' && (
         <CreatePostBuilder switchType={switchType} />
       )}
+
+      {/* Edit mode editors */}
       {mode === 'edit' && editType === 'minimal' && (
         <CreatePostMinimal
           blogContentForEdit={blogContentForEdit}
@@ -200,5 +246,5 @@ export const CreatePost = ({ mode }: CreatePostProps) => {
         />
       )}
     </>
-  )
-}
+  );
+};

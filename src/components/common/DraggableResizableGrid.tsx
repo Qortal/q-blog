@@ -1,36 +1,36 @@
 // DraggableResizableGrid.tsx
-import React from 'react'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import GridLayout, { Layout } from 'react-grid-layout'
+import React from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import GridLayout, { Layout } from 'react-grid-layout';
 
-import './DraggableResizableGrid.css' // Add your custom CSS for the grid layout
+import './DraggableResizableGrid.css'; // Add your custom CSS for the grid layout
 
 interface GridItem {
-  id: string
-  content: React.ReactNode
+  id: string;
+  content: React.ReactNode;
 }
 
 interface DraggableResizableGridProps {
-  items: GridItem[]
-  cols?: number
-  rowHeight?: number
-  onLayoutChange?: (layout: Layout[]) => void
+  items: GridItem[];
+  cols?: number;
+  rowHeight?: number;
+  onLayoutChange?: (layout: Layout[]) => void;
 }
 
 const DraggableResizableGrid: React.FC<DraggableResizableGridProps> = ({
   items,
   cols = 12,
   rowHeight = 30,
-  onLayoutChange
+  onLayoutChange,
 }) => {
   const layout = items.map((item, index) => ({
     i: item.id,
     x: index % cols,
     y: Math.floor(index / cols),
     w: 4,
-    h: 4
-  }))
+    h: 4,
+  }));
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -49,7 +49,7 @@ const DraggableResizableGrid: React.FC<DraggableResizableGridProps> = ({
         ))}
       </GridLayout>
     </DndProvider>
-  )
-}
+  );
+};
 
-export default DraggableResizableGrid
+export default DraggableResizableGrid;

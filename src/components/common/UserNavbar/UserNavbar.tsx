@@ -1,5 +1,5 @@
-import React from 'react'
-import { styled } from '@mui/system'
+import React from 'react';
+import { styled } from '@mui/system';
 import {
   AppBar,
   Toolbar,
@@ -8,8 +8,8 @@ import {
   Menu,
   MenuItem,
   Box,
-  Button
-} from '@mui/material'
+  Button,
+} from '@mui/material';
 
 import {
   CustomAppBar,
@@ -18,57 +18,52 @@ import {
   StyledAppBar,
   StyledToolbar,
   StyledMenu,
-  StyledMenuItem
-} from './UserNavbar-styles'
+  StyledMenuItem,
+} from './UserNavbar-styles';
 
-import { useNavigate } from 'react-router-dom'
-import { Menu as MenuIcon } from '@mui/icons-material'
-import { removePrefix } from '../../../utils/blogIdformats'
-import { QblogLogoContainer } from '../../layout/Navbar/Navbar-styles'
-import QblogLogo from '../../../assets/img/qBlogLogo.png'
+import { useNavigate } from 'react-router-dom';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { removePrefix } from '../../../utils/blogIdformats';
+import { QblogLogoContainer } from '../../layout/Navbar/Navbar-styles';
+import QblogLogo from '../../../assets/img/qBlogLogo.png';
 
 interface Props {
-  title: string
-  menuItems: any[]
-  name: string
-  blogId: string
+  title: string;
+  menuItems: any[];
+  name: string;
+  blogId: string;
 }
 
-export const UserNavbar: React.FC<Props> = ({
-  title,
-  menuItems,
-  name,
-  blogId
-}) => {
-  const navigate = useNavigate()
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+export const UserNavbar: React.FC<Props> = ({ title, menuItems, name, blogId }) => {
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleClose = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
   const goToPost = (item: any) => {
-    if (!name) return
-    const { postId } = item
+    if (!name) return;
+    const { postId } = item;
 
-    const str = postId
-    const arr = str.split('-post-')
-    const str1 = arr[0]
-    const str2 = arr[1]
-    const blogId = removePrefix(str1)
-    navigate(`/${name}/${blogId}/${str2}`)
-  }
+    const str = postId;
+    const arr = str.split('-post-');
+    const str1 = arr[0];
+    const str2 = arr[1];
+    const blogId = removePrefix(str1);
+    navigate(`/${name}/${blogId}/${str2}`);
+  };
 
   const handleAction = (action: () => void) => {
-    handleClose()
+    handleClose();
     setTimeout(() => {
-      action()
-    }, 100)
-  }
+      action();
+    }, 100);
+  };
 
   return (
     <CustomAppBar position="sticky">
@@ -76,25 +71,20 @@ export const UserNavbar: React.FC<Props> = ({
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
         >
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            onClick={handleClick}
-          >
+          <IconButton edge="start" color="inherit" aria-label="menu" onClick={handleClick}>
             <MenuIcon />
           </IconButton>
           <CustomTitle
             variant="h6"
             sx={{
               cursor: 'pointer',
-              marginLeft: '10px'
+              marginLeft: '10px',
             }}
             onClick={() => {
-              navigate(`/${name}/${blogId}`)
+              navigate(`/${name}/${blogId}`);
             }}
           >
             {title}
@@ -107,10 +97,7 @@ export const UserNavbar: React.FC<Props> = ({
           PaperProps={{ style: { width: '250px' } }}
         >
           {menuItems.map((item, index) => (
-            <StyledMenuItem
-              key={index}
-              onClick={() => handleAction(() => goToPost(item))}
-            >
+            <StyledMenuItem key={index} onClick={() => handleAction(() => goToPost(item))}>
               {item.name}
             </StyledMenuItem>
           ))}
@@ -118,18 +105,18 @@ export const UserNavbar: React.FC<Props> = ({
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
         >
           <QblogLogoContainer
             src={QblogLogo}
             alt="Qblog Logo"
             onClick={() => {
-              navigate(`/`)
+              navigate(`/`);
             }}
           />
         </Box>
       </CustomToolbar>
     </CustomAppBar>
-  )
-}
+  );
+};
