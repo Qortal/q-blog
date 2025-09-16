@@ -86,20 +86,25 @@ export const GenericModal: React.FC<GenericModalProps> = ({
   const { publishGeneric } = usePublishGeneric();
   const dispatch = useDispatch();
 
-  let acceptedFile = {};
+  // Build accept prop for dropzone correctly
+  let accept: Record<string, string[]> | undefined = undefined;
   if (acceptedFileType) {
-    acceptedFile = {
-      [acceptedFileType]: [],
-    };
+    accept = { [acceptedFileType]: [] } as any;
+  } else if (acceptedFileTypes && acceptedFileTypes.length > 0) {
+    accept = acceptedFileTypes.reduce((acc, t) => {
+      acc[t] = [] as any;
+      return acc;
+    }, {} as Record<string, string[]>);
   }
+
   const { getRootProps, getInputProps } = useDropzone({
-    ...acceptedFile,
+    accept,
     maxFiles: 1,
     maxSize,
     onDrop: (acceptedFiles) => {
       setFile(acceptedFiles[0]);
     },
-    onDropRejected: (rejectedFiles) => {
+    onDropRejected: () => {
       dispatch(
         setNotification({
           msg: 'Your file is over the 500mb limit.',
@@ -137,7 +142,12 @@ export const GenericModal: React.FC<GenericModalProps> = ({
     if (missingFields.length > 0) {
       const missingFieldsString = missingFields.join(', ');
       const errMsg = `Missing: ${missingFieldsString}`;
-
+      dispatch(
+        setNotification({
+          msg: errMsg,
+          alertType: 'error',
+        }),
+      );
       return;
     }
     if (!file) return;

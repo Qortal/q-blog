@@ -421,6 +421,10 @@ export const CreatePostBuilder = ({
       const errMsg = `Missing: ${missingFieldsString}`;
       errorMsg = errMsg;
     }
+    const blogIdForPublish = computeBlogIdForPublish(currentBlog, blogMetadataForEdit);
+    if (!blogIdForPublish && !errorMsg) {
+      errorMsg = 'Cannot determine which blog to publish to. Open your blog and try again.';
+    }
     // In edit mode, allow updating even if content array is empty (legacy/minimal posts)
 
     if (errorMsg) {
@@ -446,7 +450,6 @@ export const CreatePostBuilder = ({
       layoutGeneralSettings,
     };
     try {
-      if (!currentBlog) return;
       const id = uid();
       let createTitleId = title
         .replace(/[^a-zA-Z0-9\s-]/g, '')
@@ -468,7 +471,6 @@ export const CreatePostBuilder = ({
         createTitleId = createTitleId.slice(1);
       }
       createTitleId = createTitleId.slice(0, 24);
-      const blogIdForPublish = computeBlogIdForPublish(currentBlog, blogMetadataForEdit);
       const identifier = postIdForEdit
         ? `${blogIdForPublish ?? ''}-post-${postIdForEdit}`
         : `${blogIdForPublish ?? currentBlog?.blogId ?? ''}-post-${createTitleId}-${id}`;

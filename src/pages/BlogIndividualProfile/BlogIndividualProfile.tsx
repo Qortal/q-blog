@@ -7,6 +7,7 @@ import { Typography, Box, Button, useTheme } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import BlogPostPreview from '../BlogList/PostPreview';
 import {
+  setCurrentBlog,
   setIsLoadingGlobal,
   setVisitingBlog,
   toggleEditBlogModal,
@@ -188,6 +189,24 @@ export const BlogIndividualProfile = () => {
       }
       const responseData = await response.json();
       dispatch(setVisitingBlog({ ...responseData, name }));
+      const isOwner = user?.name && username && user.name === username;
+      if (isOwner) {
+        dispatch(
+          setCurrentBlog({
+            createdAt: responseData?.createdAt || Date.now(),
+            blogId: blog,
+            title: responseData?.title || '',
+            description: responseData?.description || '',
+            blogImage: responseData?.blogImage || '',
+            category: responseData?.category,
+            tags: responseData?.tags || [],
+            navbarConfig: responseData?.navbarConfig || null,
+            wikiEnabled: (responseData as any)?.wikiEnabled ?? false,
+            editorWhitelist: (responseData as any)?.editorWhitelist || [],
+            editorBlacklist: (responseData as any)?.editorBlacklist || [],
+          }),
+        );
+      }
       setUserBlog(responseData);
       setNotFound(false);
     } catch (error) {

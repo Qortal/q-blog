@@ -200,7 +200,7 @@ export const ImagePanel: React.FC<ImagePanelProps> = ({ onSelect, height, width 
                 setIsOpen(false);
               }}
             >
-              <Button variant="contained">Publish new image</Button>
+              <Button variant="contained">Embed new image</Button>
             </ImageUploader>
           </Box>
         </Panel>

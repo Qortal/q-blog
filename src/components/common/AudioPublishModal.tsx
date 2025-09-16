@@ -20,6 +20,8 @@ import { toBase64 } from '../../utils/toBase64';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import { usePublishAudio } from './PublishAudio';
+import { useDispatch } from 'react-redux';
+import { setNotification } from '../../state/features/notificationsSlice';
 
 const StyledModal = styled(Modal)(({ theme }) => ({
   display: 'flex',
@@ -141,6 +143,7 @@ export const AudioModal: React.FC<VideoModalProps> = ({
   onPublish,
   editVideoIdentifier,
 }) => {
+  const dispatch = useDispatch();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -189,7 +192,12 @@ export const AudioModal: React.FC<VideoModalProps> = ({
     if (missingFields.length > 0) {
       const missingFieldsString = missingFields.join(', ');
       const errMsg = `Missing: ${missingFieldsString}`;
-
+      dispatch(
+        setNotification({
+          msg: errMsg,
+          alertType: 'error',
+        }),
+      );
       return;
     }
     if (!file) return;
